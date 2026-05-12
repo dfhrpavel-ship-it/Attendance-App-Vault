@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AttendEase — Employee Attendance System</title>
+
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Google Fonts — Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { poppins: ['Poppins', 'sans-serif'] },
+          colors: {
+            'bg': '#F5F6FA',
+            'card': '#FFFFFF',
+            'primary': { 50:'#E8F5EE', 100:'#C6E7D5', 200:'#95D5B2', 300:'#52B788', 400:'#40916C', 500:'#2D6A4F', 600:'#1B4332', 700:'#143728', 800:'#0D2818', 900:'#081C11' },
+            'gold': { 50:'#FFF8E7', 100:'#FFEEBA', 200:'#FFE08A', 300:'#FFD24B', 400:'#F0C040', 500:'#D4A843', 600:'#B8922F', 700:'#9A7A20', 800:'#7D6216', 900:'#5F4A0F' },
+            'mint': '#95D5B2',
+            'absent': '#DC3545',
+            'leave': '#FFC107',
+            'present': '#28A745',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* ── Base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Poppins', sans-serif; background: #F5F6FA; color: #1a1a2e; overflow-x: hidden; }
+
+    /* ── Scrollbar ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2D6A4F55; border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2D6A4F99; }
+
+    /* ── Login Background ──────────────────────────────────── */
+    .login-bg {
+      background: linear-gradient(135deg, #081C11 0%, #1B4332 40%, #2D6A4F 75%, #40916C 100%);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .login-bg::before {
+      content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle at 30% 50%, rgba(149,213,178,0.12) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 80%, rgba(212,168,67,0.08) 0%, transparent 40%);
+      animation: loginFloat 20s ease-in-out infinite;
+    }
+    @keyframes loginFloat {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(30px, -30px) rotate(2deg); }
+      66% { transform: translate(-20px, 20px) rotate(-1deg); }
+    }
+
+    /* ── Glass Card ────────────────────────────────────────── */
+    .glass {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 20px;
+    }
+    .glass-light {
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 16px;
+    }
+
+    /* ── Employee Card ─────────────────────────────────────── */
+    .emp-card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .emp-card:hover {
+      box-shadow: 0 8px 30px rgba(27,67,50,0.10);
+      transform: translateY(-2px);
+      border-color: #95D5B2;
+    }
+
+    /* ── Attendance Buttons ────────────────────────────────── */
+    .att-btn {
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      border: 2px solid #d1d5db;
+      background: white;
+      color: #6b7280;
+      font-weight: 700; font-size: 14px;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      position: relative; overflow: hidden;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .att-btn::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.4) 0%, transparent 70%);
+      transform: scale(0); transition: transform 0.4s;
+      border-radius: inherit;
+    }
+    .att-btn:active::after { transform: scale(2.5); transition: transform 0s; }
+
+    /* Present */
+    .att-btn.btn-p.active {
+      background: linear-gradient(135deg, #28A745, #20c955);
+      border-color: #28A745; color: white;
+      box-shadow: 0 4px 14px rgba(40,167,69,0.35);
+    }
+    .att-btn.btn-p:not(.active):hover { border-color: #28A745; color: #28A745; background: #f0fdf4; }
+
+    /* Absent */
+    .att-btn.btn-a.active {
+      background: linear-gradient(135deg, #DC3545, #e84d5c);
+      border-color: #DC3545; color: white;
+      box-shadow: 0 4px 14px rgba(220,53,69,0.35);
+    }
+    .att-btn.btn-a:not(.active):hover { border-color: #DC3545; color: #DC3545; background: #fef2f2; }
+
+    /* Leave */
+    .att-btn.btn-l.active {
+      background: linear-gradient(135deg, #FFC107, #ffd54f);
+      border-color: #e6ac00; color: #5F4A0F;
+      box-shadow: 0 4px 14px rgba(255,193,7,0.35);
+    }
+    .att-btn.btn-l:not(.active):hover { border-color: #FFC107; color: #B8922F; background: #fffbeb; }
+
+    /* ── Submit Button ─────────────────────────────────────── */
+    .submit-btn {
+      background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 50%, #40916C 100%);
+      color: white; font-weight: 600; border: none; border-radius: 14px;
+      padding: 14px 32px; font-size: 16px; cursor: pointer;
+      box-shadow: 0 6px 24px rgba(27,67,50,0.30);
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      position: relative; overflow: hidden;
+    }
+    .submit-btn:hover {
+      box-shadow: 0 8px 32px rgba(27,67,50,0.40);
+      transform: translateY(-1px);
+    }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn:disabled {
+      opacity: 0.5; cursor: not-allowed;
+      transform: none; box-shadow: none;
+    }
+    .submit-btn .btn-shine {
+      position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      transition: left 0.5s;
+    }
+    .submit-btn:hover .btn-shine { left: 100%; }
+
+    /* ── Modal Overlay ─────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(8,28,17,0.50);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal-overlay .modal-box {
+      transform: translateY(20px) scale(0.97);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .modal-overlay.open .modal-box {
+      transform: translateY(0) scale(1);
+    }
+
+    /* ── Toast ─────────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(30px);
+      padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: 500;
+      color: white; z-index: 100; opacity: 0;
+      transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+      pointer-events: none; white-space: nowrap;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: linear-gradient(135deg, #28A745, #20c955); }
+    .toast.error   { background: linear-gradient(135deg, #DC3545, #e84d5c); }
+    .toast.info    { background: linear-gradient(135deg, #2D6A4F, #40916C); }
+
+    /* ── Spinner ───────────────────────────────────────────── */
+    .spinner {
+      width: 22px; height: 22px;
+      border: 3px solid rgba(255,255,255,0.25);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Avatar Placeholder ────────────────────────────────── */
+    .avatar-placeholder {
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, #2D6A4F, #40916C);
+      color: white; font-weight: 700; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Stats Cards ───────────────────────────────────────── */
+    .stat-card {
+      border-radius: 14px; padding: 16px 20px;
+      background: white; border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      transition: transform 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); }
+
+    /* ── Responsive ────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .emp-card { padding: 14px !important; }
+      .att-btn { width: 38px; height: 38px; font-size: 13px; border-radius: 10px; }
+    }
+
+    /* ── Fade-in animation ─────────────────────────────────── */
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.10s; }
+    .stagger-3 { animation-delay: 0.15s; }
+
+    /* ── Empty state ───────────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: #9ca3af;
+    }
+
+    /* ── Pulse ring for logo ───────────────────────────────── */
+    .pulse-ring {
+      animation: pulseRing 2.5s ease-in-out infinite;
+    }
+    @keyframes pulseRing {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(149,213,178,0.4); }
+      50% { box-shadow: 0 0 0 18px rgba(149,213,178,0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 1 — LOGIN SCREEN
+       ═══════════════════════════════════════════════════════ -->
+  <div id="loginScreen" class="login-bg">
+    <!-- Floating decorative circles -->
+    <div style="position:absolute;top:10%;left:8%;width:80px;height:80px;border-radius:50%;border:1px solid rgba(149,213,178,0.15);"></div>
+    <div style="position:absolute;bottom:15%;right:10%;width:120px;height:120px;border-radius:50%;border:1px solid rgba(212,168,67,0.1);"></div>
+    <div style="position:absolute;top:50%;right:20%;width:40px;height:40px;border-radius:50%;background:rgba(149,213,178,0.08);"></div>
+
+    <div class="glass p-8 sm:p-10 w-full max-w-md mx-4 relative z-10">
+      <!-- Logo -->
+      <div class="flex flex-col items-center mb-8">
+        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-300 to-primary-600 flex items-center justify-center mb-4 pulse-ring">
+          <i class="fa-solid fa-clipboard-check text-white text-3xl"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-white tracking-tight">AttendEase</h1>
+        <p class="text-primary-200 text-sm mt-1">Employee Attendance Management</p>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" class="space-y-5" onsubmit="return false;">
+        <div>
+          <label class="block text-primary-100 text-xs font-medium mb-2 uppercase tracking-wider">
+            <i class="fa-solid fa-user mr-1"></i> Username
+          </label>
+          <input id="loginUser" type="text" required autocomplete="username"
+            class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary-200 focus:bg-white/15 transition-all text-sm"
+            placeholder="Enter your username" />
+        </div>
+        <div>
+          <label class="block text-primary-100 text-xs font-medium mb-2 uppercase tracking-wider">
+            <i class="fa-solid fa-lock mr-1"></i> Password
+          </label>
+          <div class="relative">
+            <input id="loginPass" type="password" required autocomplete="current-password"
+              class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary-200 focus:bg-white/15 transition-all text-sm pr-12"
+              placeholder="Enter your password" />
+            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors">
+              <i id="eyeIcon" class="fa-solid fa-eye text-sm"></i>
+            </button>
+          </div>
+        </div>
+        <div id="loginError" class="text-red-300 text-xs hidden rounded-lg bg-red-500/15 px-3 py-2">
+          <i class="fa-solid fa-circle-exclamation mr-1"></i>
+          <span id="loginErrorMsg"></span>
+        </div>
+        <button type="submit" id="loginBtn" onclick="handleLogin()"
+          class="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary-300 via-primary-400 to-primary-300 text-white hover:from-primary-400 hover:via-primary-500 hover:to-primary-400 transition-all shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center gap-2">
+          <span>Sign In</span>
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+        </button>
+      </form>
+
+      <!-- Settings shortcut (when GAS URL is not set) -->
+      <div class="mt-6 text-center">
+        <button onclick="openSettings()" class="text-primary-200/60 hover:text-primary-100 text-xs transition-colors">
+          <i class="fa-solid fa-gear mr-1"></i> Configure Backend URL
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 2 — MAIN DASHBOARD (hidden by default)
+       ═══════════════════════════════════════════════════════ -->
+  <div id="dashboard" class="hidden min-h-screen flex flex-col">
+
+    <!-- ── Header ──────────────────────────────────────────── -->
+    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-gray-100 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <!-- Left: App Name -->
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md">
+            <i class="fa-solid fa-clipboard-check text-white text-sm"></i>
+          </div>
+          <div class="hidden sm:block">
+            <h1 class="text-base font-bold text-primary-700 leading-tight">AttendEase</h1>
+            <p id="headerDate" class="text-[11px] text-gray-400 font-medium"></p>
+          </div>
+        </div>
+
+        <!-- Right: User Info + Actions -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Current date (mobile) -->
+          <span id="headerDateMobile" class="sm:hidden text-xs text-gray-400 font-medium mr-1"></span>
+
+          <!-- User badge -->
+          <div class="flex items-center gap-2 bg-primary-50 rounded-xl px-3 py-1.5">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+              <i class="fa-solid fa-user text-white text-[10px]"></i>
+            </div>
+            <span id="headerUser" class="text-xs font-semibold text-primary-700 hidden sm:inline"></span>
+          </div>
+
+          <!-- Settings button -->
+          <button onclick="openSettings()" title="Settings"
+            class="w-9 h-9 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-primary-600 transition-all">
+            <i class="fa-solid fa-gear text-sm"></i>
+          </button>
+
+          <!-- Logout button -->
+          <button onclick="handleLogout()" title="Logout"
+            class="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 flex items-center justify-center text-gray-400 hover:text-red-500 transition-all">
+            <i class="fa-solid fa-right-from-bracket text-sm"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Main Content ────────────────────────────────────── -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 pb-28">
+
+      <!-- Page Title -->
+      <div class="mb-6 fade-in">
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Daily Attendance</h2>
+        <p class="text-sm text-gray-400 mt-0.5">Mark and manage employee attendance records</p>
+      </div>
+
+      <!-- ── Stats Row ─────────────────────────────────────── -->
+      <div id="statsRow" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 fade-in stagger-1">
+        <div class="stat-card">
+          <div class="flex items-center gap-2 mb-1">
+            <div class="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
+              <i class="fa-solid fa-users text-primary-500 text-xs"></i>
+            </div>
+            <span class="text-xs text-gray-400 font-medium">Total</span>
+          </div>
+          <p id="statTotal" class="text-2xl font-bold text-gray-800">0</p>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center gap-2 mb-1">
+            <div class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+              <i class="fa-solid fa-circle-check text-present text-xs"></i>
+            </div>
+            <span class="text-xs text-gray-400 font-medium">Present</span>
+          </div>
+          <p id="statPresent" class="text-2xl font-bold text-present">0</p>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center gap-2 mb-1">
+            <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+              <i class="fa-solid fa-circle-xmark text-absent text-xs"></i>
+            </div>
+            <span class="text-xs text-gray-400 font-medium">Absent</span>
+          </div>
+          <p id="statAbsent" class="text-2xl font-bold text-absent">0</p>
+        </div>
+        <div class="stat-card">
+          <div class="flex items-center gap-2 mb-1">
+            <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+              <i class="fa-solid fa-calendar-minus text-leave text-xs"></i>
+            </div>
+            <span class="text-xs text-gray-400 font-medium">Leave</span>
+          </div>
+          <p id="statLeave" class="text-2xl font-bold text-amber-500">0</p>
+        </div>
+      </div>
+
+      <!-- ── Date Selector + Actions ───────────────────────── -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 fade-in stagger-2">
+        <div class="flex items-center gap-3">
+          <label class="text-sm font-semibold text-gray-600">
+            <i class="fa-regular fa-calendar mr-1 text-primary-500"></i> Date:
+          </label>
+          <input id="attendanceDate" type="date"
+            class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all"
+            onchange="loadAttendanceForDate()" />
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="markAll('Present')"
+            class="px-3 py-2 rounded-xl bg-green-50 hover:bg-green-100 text-present text-xs font-semibold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-check-double"></i> All Present
+          </button>
+          <button onclick="resetAll()"
+            class="px-3 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-500 text-xs font-semibold transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Loading State ─────────────────────────────────── -->
+      <div id="loadingState" class="hidden">
+        <div class="flex flex-col items-center justify-center py-20">
+          <div class="spinner mb-4" style="width:36px;height:36px;border-width:4px;border-color:rgba(27,67,50,0.15);border-top-color:#2D6A4F;"></div>
+          <p class="text-sm text-gray-400 font-medium" id="loadingText">Loading employees...</p>
+        </div>
+      </div>
+
+      <!-- ── Empty State ───────────────────────────────────── -->
+      <div id="emptyState" class="hidden empty-state fade-in">
+        <div class="w-20 h-20 mx-auto rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+          <i class="fa-solid fa-users-slash text-gray-300 text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-400 mb-1">No Employees Found</h3>
+        <p class="text-sm text-gray-300 max-w-sm mx-auto">Make sure your Google Sheet has employee data and the backend URL is configured correctly in Settings.</p>
+      </div>
+
+      <!-- ── Employee Grid ─────────────────────────────────── -->
+      <div id="employeeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Employee cards will be dynamically inserted here -->
+      </div>
+    </main>
+
+    <!-- ── Sticky Submit Bar ───────────────────────────────── -->
+    <div id="submitBar" class="fixed bottom-0 left-0 right-0 z-30 bg-white/85 backdrop-blur-lg border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+        <div class="text-xs text-gray-400 hidden sm:block">
+          <i class="fa-solid fa-circle-info mr-1"></i>
+          <span id="submitSummary">Select attendance status for each employee</span>
+        </div>
+        <button id="submitBtn" onclick="submitAttendance()" class="submit-btn flex items-center gap-2 text-sm">
+          <span class="btn-shine"></span>
+          <i class="fa-solid fa-paper-plane relative z-10"></i>
+          <span class="relative z-10" id="submitBtnText">Submit All Attendance</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 3 — SETTINGS MODAL
+       ═══════════════════════════════════════════════════════ -->
+  <div id="settingsModal" class="modal-overlay" onclick="closeSettingsOutside(event)">
+    <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 sm:p-8">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
+            <i class="fa-solid fa-gear text-primary-600"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-gray-800">Settings</h3>
+            <p class="text-xs text-gray-400">Configure your backend connection</p>
+          </div>
+        </div>
+        <button onclick="closeSettings()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Backend URL Input -->
+      <div class="mb-6">
+        <label class="block text-sm font-semibold text-gray-600 mb-2">
+          <i class="fa-solid fa-link mr-1 text-primary-500"></i> Google Apps Script Web App URL
+        </label>
+        <input id="gasUrlInput" type="url"
+          class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-700 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all"
+          placeholder="https://script.google.com/macros/s/xxxxx/exec" />
+        <p class="text-xs text-gray-400 mt-2">
+          <i class="fa-solid fa-circle-info mr-1"></i>
+          Paste the URL from your deployed Google Apps Script Web App. This URL is saved locally in your browser.
+        </p>
+      </div>
+
+      <!-- Save Button -->
+      <button onclick="saveSettings()"
+        class="w-full py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-400 text-white hover:from-primary-600 hover:to-primary-500 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+        <i class="fa-solid fa-floppy-disk"></i> Save Settings
+      </button>
+
+      <!-- Connection Test -->
+      <button onclick="testConnection()"
+        class="w-full mt-3 py-3 rounded-xl font-semibold text-sm border-2 border-primary-200 text-primary-600 hover:bg-primary-50 transition-all flex items-center justify-center gap-2">
+        <i class="fa-solid fa-wifi"></i> Test Connection
+      </button>
+
+      <!-- Connection Status -->
+      <div id="connectionStatus" class="mt-4 hidden">
+        <div id="connectionMsg" class="text-xs rounded-lg px-3 py-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 4 — TOAST NOTIFICATION
+       ═══════════════════════════════════════════════════════ -->
+  <div id="toast" class="toast"></div>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       JAVASCRIPT — Application Logic
+       ═══════════════════════════════════════════════════════ -->
+  <script>
+    /**
+     * ============================================================
+     *  AttendEase — Application JavaScript
+     * ============================================================
+     *  Handles: Authentication, Settings, Employee Fetching,
+     *  Attendance Marking, and Bulk Submission.
+     * ============================================================
+     */
+
+    /* ── State ─────────────────────────────────────────────── */
+    let APP = {
+      gasUrl: localStorage.getItem('attd_gas_url') || '',
+      currentUser: JSON.parse(sessionStorage.getItem('attd_user') || 'null'),
+      employees: [],          // Array of employee objects from sheet
+      attendanceMap: {},      // { empId: 'Present'|'Absent'|'Leave' }
+      isSubmitting: false
+    };
+
+    /* ── Initialization ────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', function () {
+      init();
+    });
+
+    function init() {
+      setTodayDate();
+      updateHeaderDate();
+      prefillSettingsUrl();
+
+      // If user is already logged in, go to dashboard
+      if (APP.currentUser) {
+        showDashboard();
+      }
+    }
+
+    /* ── Date Helpers ──────────────────────────────────────── */
+    function setTodayDate() {
+      const today = formatDateISO(new Date());
+      document.getElementById('attendanceDate').value = today;
+    }
+
+    function formatDateISO(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + d;
+    }
+
+    function formatDateDisplay(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+    }
+
+    function updateHeaderDate() {
+      const today = formatDateDisplay(formatDateISO(new Date()));
+      document.getElementById('headerDate').textContent = today;
+      document.getElementById('headerDateMobile').textContent = today;
+    }
+
+    /* ── Settings Modal ────────────────────────────────────── */
+    function prefillSettingsUrl() {
+      document.getElementById('gasUrlInput').value = APP.gasUrl;
+    }
+
+    function openSettings() {
+      prefillSettingsUrl();
+      document.getElementById('settingsModal').classList.add('open');
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.remove('open');
+    }
+
+    function closeSettingsOutside(e) {
+      if (e.target === document.getElementById('settingsModal')) closeSettings();
+    }
+
+    function saveSettings() {
+      const url = document.getElementById('gasUrlInput').value.trim();
+      if (!url) {
+        showToast('Please enter a valid URL.', 'error');
+        return;
+      }
+      APP.gasUrl = url;
+      localStorage.setItem('attd_gas_url', url);
+      showToast('Settings saved successfully!', 'success');
+      closeSettings();
+    }
+
+    async function testConnection() {
+      const url = document.getElementById('gasUrlInput').value.trim();
+      if (!url) {
+        showToast('Enter a URL first.', 'error');
+        return;
+      }
+      const statusEl = document.getElementById('connectionStatus');
+      const msgEl = document.getElementById('connectionMsg');
+      statusEl.classList.remove('hidden');
+      msgEl.className = 'text-xs rounded-lg px-3 py-2 bg-blue-50 text-blue-600';
+      msgEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Testing connection...';
+
+      try {
+        const testUrl = url + '?action=employees&_t=' + Date.now();
+        const response = await fetch(testUrl);
+        const data = await response.json();
+
+        if (data.success) {
+          msgEl.className = 'text-xs rounded-lg px-3 py-2 bg-green-50 text-green-600';
+          msgEl.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> Connection successful! Found ' + (data.data ? data.data.length : 0) + ' employees.';
+        } else {
+          msgEl.className = 'text-xs rounded-lg px-3 py-2 bg-red-50 text-red-600';
+          msgEl.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Connected but returned error: ' + (data.error || 'Unknown');
+        }
+      } catch (err) {
+        msgEl.className = 'text-xs rounded-lg px-3 py-2 bg-red-50 text-red-600';
+        msgEl.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Connection failed: ' + err.message;
+      }
+    }
+
+    /* ── Authentication ────────────────────────────────────── */
+    function togglePasswordVisibility() {
+      const passInput = document.getElementById('loginPass');
+      const eyeIcon = document.getElementById('eyeIcon');
+      if (passInput.type === 'password') {
+        passInput.type = 'text';
+        eyeIcon.className = 'fa-solid fa-eye-slash text-sm';
+      } else {
+        passInput.type = 'password';
+        eyeIcon.className = 'fa-solid fa-eye text-sm';
+      }
+    }
+
+    async function handleLogin() {
+      const username = document.getElementById('loginUser').value.trim();
+      const password = document.getElementById('loginPass').value;
+      const errorEl = document.getElementById('loginError');
+      const errorMsg = document.getElementById('loginErrorMsg');
+      const btn = document.getElementById('loginBtn');
+
+      errorEl.classList.add('hidden');
+
+      // Validate backend URL
+      if (!APP.gasUrl) {
+        showToast('Please configure the Backend URL in Settings first.', 'error');
+        openSettings();
+        return;
+      }
+
+      // Validate inputs
+      if (!username || !password) {
+        errorMsg.textContent = 'Please enter both username and password.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      // Show loading state on button
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Signing in...';
+
+      try {
+        const url = APP.gasUrl
+          + '?action=login'
+          + '&username=' + encodeURIComponent(username)
+          + '&password=' + encodeURIComponent(password)
+          + '&_t=' + Date.now();
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.success) {
+          APP.currentUser = data.data;
+          sessionStorage.setItem('attd_user', JSON.stringify(data.data));
+          showToast('Welcome, ' + data.data.displayName + '!', 'success');
+          showDashboard();
+        } else {
+          errorMsg.textContent = data.error || 'Login failed.';
+          errorEl.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Connection error: ' + err.message;
+        errorEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Sign In</span><i class="fa-solid fa-arrow-right-to-bracket"></i>';
+      }
+    }
+
+    function handleLogout() {
+      APP.currentUser = null;
+      APP.employees = [];
+      APP.attendanceMap = {};
+      sessionStorage.removeItem('attd_user');
+      document.getElementById('loginUser').value = '';
+      document.getElementById('loginPass').value = '';
+      document.getElementById('loginError').classList.add('hidden');
+      showLogin();
+      showToast('Logged out successfully.', 'info');
+    }
+
+    /* ── View Switching ────────────────────────────────────── */
+    function showLogin() {
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('dashboard').classList.add('hidden');
+    }
+
+    function showDashboard() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('headerUser').textContent = APP.currentUser.displayName;
+      fetchEmployees();
+    }
+
+    /* ── Fetch Employees ───────────────────────────────────── */
+    async function fetchEmployees() {
+      if (!APP.gasUrl) {
+        showEmptyState();
+        return;
+      }
+
+      showLoading('Loading employees...');
+
+      try {
+        const url = APP.gasUrl + '?action=employees&_t=' + Date.now();
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.success && data.data && data.data.length > 0) {
+          APP.employees = data.data;
+          // Reset attendance map for new load
+          APP.attendanceMap = {};
+          data.data.forEach(function (emp) {
+            APP.attendanceMap[emp.Emp_ID] = '';
+          });
+          // Load existing attendance for the selected date
+          await loadAttendanceForDate();
+        } else {
+          APP.employees = [];
+          APP.attendanceMap = {};
+          renderEmployeeGrid();
+          showEmptyState();
+        }
+      } catch (err) {
+        showToast('Failed to load employees: ' + err.message, 'error');
+        showEmptyState();
+      }
+    }
+
+    /* ── Load Existing Attendance for a Date ───────────────── */
+    async function loadAttendanceForDate() {
+      const date = document.getElementById('attendanceDate').value;
+      if (!date || !APP.gasUrl || APP.employees.length === 0) return;
+
+      try {
+        const url = APP.gasUrl
+          + '?action=attendance'
+          + '&date=' + encodeURIComponent(date)
+          + '&_t=' + Date.now();
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          // Reset map
+          APP.employees.forEach(function (emp) {
+            APP.attendanceMap[emp.Emp_ID] = '';
+          });
+          // Apply loaded attendance
+          data.data.forEach(function (record) {
+            const empId = record.Emp_ID;
+            if (APP.attendanceMap.hasOwnProperty(empId)) {
+              APP.attendanceMap[empId] = record.Status;
+            }
+          });
+        }
+      } catch (err) {
+        // Silently fail — user can still mark attendance fresh
+        console.warn('Could not load existing attendance:', err);
+      }
+
+      renderEmployeeGrid();
+      updateStats();
+    }
+
+    /* ── Render Employee Grid ──────────────────────────────── */
+    function renderEmployeeGrid() {
+      const grid = document.getElementById('employeeGrid');
+      const emptyEl = document.getElementById('emptyState');
+      const loadingEl = document.getElementById('loadingState');
+
+      loadingEl.classList.add('hidden');
+
+      if (APP.employees.length === 0) {
+        grid.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+
+      let html = '';
+      APP.employees.forEach(function (emp, idx) {
+        const status = APP.attendanceMap[emp.Emp_ID] || '';
+        const initials = getInitials(emp.Name);
+        const delay = Math.min(idx * 0.04, 0.6);
+
+        html += '<div class="emp-card p-5 fade-in" style="animation-delay:' + delay + 's;opacity:0;">';
+        html += '  <div class="flex items-start gap-4">';
+
+        // Avatar
+        html += '    <div class="flex-shrink-0">';
+        if (emp.Image_URL && emp.Image_URL.trim()) {
+          html += '      <img src="' + escapeHtml(emp.Image_URL) + '" alt="' + escapeHtml(emp.Name) + '" '
+            + 'class="w-14 h-14 rounded-full object-cover border-2 border-gray-100 shadow-sm" '
+            + 'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" />';
+          html += '      <div class="avatar-placeholder w-14 h-14 rounded-full hidden">' + initials + '</div>';
+        } else {
+          html += '      <div class="avatar-placeholder w-14 h-14 rounded-full">' + initials + '</div>';
+        }
+        html += '    </div>';
+
+        // Employee Info
+        html += '    <div class="flex-1 min-w-0">';
+        html += '      <h3 class="text-sm font-bold text-gray-800 truncate">' + escapeHtml(emp.Name) + '</h3>';
+        html += '      <p class="text-xs text-gray-400 mt-0.5 truncate">' + escapeHtml(emp.Designation || '') + '</p>';
+        if (emp.Department) {
+          html += '    <span class="inline-block mt-1.5 px-2 py-0.5 rounded-md bg-primary-50 text-primary-600 text-[10px] font-medium">' + escapeHtml(emp.Department) + '</span>';
+        }
+        html += '      <p class="text-[10px] text-gray-300 mt-1 font-mono">' + escapeHtml(emp.Emp_ID) + '</p>';
+        html += '    </div>';
+
+        html += '  </div>';
+
+        // Attendance Buttons
+        html += '  <div class="flex items-center gap-2 mt-4 pt-3 border-t border-gray-50">';
+        html += '    <span class="text-[10px] text-gray-300 uppercase tracking-wider font-semibold mr-1 hidden sm:inline">Status:</span>';
+
+        // Present
+        html += '    <button class="att-btn btn-p' + (status === 'Present' ? ' active' : '') + '" '
+          + 'onclick="setStatus(\'' + escapeHtml(emp.Emp_ID) + '\', \'Present\', this)" title="Present">P</button>';
+
+        // Absent
+        html += '    <button class="att-btn btn-a' + (status === 'Absent' ? ' active' : '') + '" '
+          + 'onclick="setStatus(\'' + escapeHtml(emp.Emp_ID) + '\', \'Absent\', this)" title="Absent">A</button>';
+
+        // Leave
+        html += '    <button class="att-btn btn-l' + (status === 'Leave' ? ' active' : '') + '" '
+          + 'onclick="setStatus(\'' + escapeHtml(emp.Emp_ID) + '\', \'Leave\', this)" title="Leave">L</button>';
+
+        // Status label
+        if (status) {
+          const colorClass = status === 'Present' ? 'text-present bg-green-50'
+            : status === 'Absent' ? 'text-absent bg-red-50'
+            : 'text-amber-600 bg-amber-50';
+          html += '    <span class="ml-auto text-[11px] font-semibold px-2.5 py-1 rounded-lg ' + colorClass + '">'
+            + status + '</span>';
+        }
+
+        html += '  </div>';
+        html += '</div>';
+      });
+
+      grid.innerHTML = html;
+      updateStats();
+      updateSubmitSummary();
+    }
+
+    /* ── Set Attendance Status for One Employee ────────────── */
+    function setStatus(empId, status, btnEl) {
+      APP.attendanceMap[empId] = status;
+
+      // Update button active states within the same card
+      const card = btnEl.closest('.emp-card');
+      const buttons = card.querySelectorAll('.att-btn');
+      buttons.forEach(function (btn) { btn.classList.remove('active'); });
+      btnEl.classList.add('active');
+
+      // Update status label
+      const existing = card.querySelector('.ml-auto');
+      if (existing && existing.classList.contains('rounded-lg')) {
+        existing.remove();
+      }
+      const colorClass = status === 'Present' ? 'text-present bg-green-50'
+        : status === 'Absent' ? 'text-absent bg-red-50'
+        : 'text-amber-600 bg-amber-50';
+      const label = document.createElement('span');
+      label.className = 'ml-auto text-[11px] font-semibold px-2.5 py-1 rounded-lg ' + colorClass;
+      label.textContent = status;
+      btnEl.parentElement.appendChild(label);
+
+      updateStats();
+      updateSubmitSummary();
+    }
+
+    /* ── Bulk Actions ──────────────────────────────────────── */
+    function markAll(status) {
+      APP.employees.forEach(function (emp) {
+        APP.attendanceMap[emp.Emp_ID] = status;
+      });
+      renderEmployeeGrid();
+      showToast('All employees marked as ' + status + '.', 'info');
+    }
+
+    function resetAll() {
+      APP.employees.forEach(function (emp) {
+        APP.attendanceMap[emp.Emp_ID] = '';
+      });
+      renderEmployeeGrid();
+    }
+
+    /* ── Submit Attendance ─────────────────────────────────── */
+    async function submitAttendance() {
+      if (APP.isSubmitting) return;
+
+      // Collect all marked employees
+      const date = document.getElementById('attendanceDate').value;
+      const records = [];
+      let unmarkedCount = 0;
+
+      APP.employees.forEach(function (emp) {
+        const status = APP.attendanceMap[emp.Emp_ID];
+        if (status) {
+          records.push({
+            date: date,
+            empId: emp.Emp_ID,
+            name: emp.Name,
+            status: status,
+            updatedBy: APP.currentUser.displayName
+          });
+        } else {
+          unmarkedCount++;
+        }
+      });
+
+      if (records.length === 0) {
+        showToast('Please mark attendance for at least one employee.', 'error');
+        return;
+      }
+
+      if (unmarkedCount > 0) {
+        // We still allow submission of marked ones, but warn
+        if (!confirm(unmarkedCount + ' employee(s) are unmarked. Submit only the marked ones?')) {
+          return;
+        }
+      }
+
+      APP.isSubmitting = true;
+      const btn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('submitBtnText');
+      btn.disabled = true;
+      btnText.textContent = 'Submitting...';
+
+      try {
+        const response = await fetch(APP.gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'saveAttendance',
+            records: records
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showToast(data.message || 'Attendance saved!', 'success');
+          updateSubmitSummary();
+        } else {
+          showToast('Error: ' + (data.error || 'Unknown error occurred.'), 'error');
+        }
+      } catch (err) {
+        showToast('Submission failed: ' + err.message, 'error');
+      } finally {
+        APP.isSubmitting = false;
+        btn.disabled = false;
+        btnText.textContent = 'Submit All Attendance';
+      }
+    }
+
+    /* ── Stats Update ──────────────────────────────────────── */
+    function updateStats() {
+      let present = 0, absent = 0, leave = 0, unmarked = 0;
+
+      APP.employees.forEach(function (emp) {
+        const s = APP.attendanceMap[emp.Emp_ID];
+        if (s === 'Present') present++;
+        else if (s === 'Absent') absent++;
+        else if (s === 'Leave') leave++;
+        else unmarked++;
+      });
+
+      document.getElementById('statTotal').textContent = APP.employees.length;
+      document.getElementById('statPresent').textContent = present;
+      document.getElementById('statAbsent').textContent = absent;
+      document.getElementById('statLeave').textContent = leave;
+    }
+
+    function updateSubmitSummary() {
+      const marked = Object.values(APP.attendanceMap).filter(function (s) { return s !== ''; }).length;
+      const total = APP.employees.length;
+      const el = document.getElementById('submitSummary');
+      if (marked === 0) {
+        el.textContent = 'Select attendance status for each employee';
+      } else if (marked === total) {
+        el.textContent = 'All ' + total + ' employees marked — ready to submit';
+        el.style.color = '#28A745';
+      } else {
+        el.textContent = marked + ' of ' + total + ' employees marked';
+        el.style.color = '';
+      }
+    }
+
+    /* ── UI State Helpers ──────────────────────────────────── */
+    function showLoading(text) {
+      document.getElementById('loadingText').textContent = text || 'Loading...';
+      document.getElementById('loadingState').classList.remove('hidden');
+      document.getElementById('emptyState').classList.add('hidden');
+      document.getElementById('employeeGrid').innerHTML = '';
+    }
+
+    function showEmptyState() {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('emptyState').classList.remove('hidden');
+      document.getElementById('employeeGrid').innerHTML = '';
+      updateStats();
+    }
+
+    /* ── Toast Notification ────────────────────────────────── */
+    function showToast(message, type) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast ' + (type || 'info');
+      // Trigger reflow for re-animation
+      void toast.offsetWidth;
+      toast.classList.add('show');
+
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(function () {
+        toast.classList.remove('show');
+      }, 3500);
+    }
+
+    /* ── Utility Functions ─────────────────────────────────── */
+    function getInitials(name) {
+      if (!name) return '?';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return name.substring(0, 2).toUpperCase();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+
+    /* ── Keyboard Shortcuts ────────────────────────────────── */
+    document.addEventListener('keydown', function (e) {
+      // Enter key on login form
+      if (e.key === 'Enter' && !document.getElementById('loginScreen').classList.contains('hidden')) {
+        handleLogin();
+      }
+      // Escape to close settings
+      if (e.key === 'Escape') {
+        closeSettings();
+      }
+    });
+  </script>
+</body>
+</html>
