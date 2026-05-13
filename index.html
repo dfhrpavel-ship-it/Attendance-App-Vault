@@ -88,9 +88,9 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
   <div style="position:absolute;top:10%;left:8%;width:80px;height:80px;border-radius:50%;border:1px solid rgba(149,213,178,.15)"></div>
   <div class="glass p-8 sm:p-10 w-full max-w-md mx-4 relative z-10">
     <div class="flex flex-col items-center mb-8">
-      <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-300 to-primary-600 flex items-center justify-center mb-4 pulse-r"><i class="fa-solid fa-clipboard-check text-white text-3xl"></i></div>
-      <h1 class="text-2xl font-bold text-white">AttendEase</h1>
-      <p class="text-primary-200 text-sm mt-1">Employee Attendance Management</p>
+      <div id="loginLogo" class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-300 to-primary-600 flex items-center justify-center mb-4 pulse-r"><i class="fa-solid fa-clipboard-check text-white text-3xl"></i></div>
+      <h1 id="loginTitle" class="text-2xl font-bold text-white">AttendEase</h1>
+      <p id="loginSubtitle" class="text-primary-200 text-sm mt-1">Employee Attendance Management</p>
     </div>
     <form class="space-y-4" onsubmit="return false">
       <div><label class="block text-primary-100 text-xs font-medium mb-1.5 uppercase tracking-wider"><i class="fa-solid fa-user mr-1"></i>Username</label><input id="loginUser" type="text" required class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-primary-200 text-sm" placeholder="Enter username"/></div>
@@ -110,7 +110,7 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md"><i class="fa-solid fa-clipboard-check text-white text-sm"></i></div>
-      <div class="hidden sm:block"><h1 class="text-sm font-bold text-primary-700">AttendEase</h1><p id="headerDate" class="text-[10px] text-gray-400"></p></div>
+      <div class="hidden sm:block"><h1 id="hdrTitle" class="text-sm font-bold text-primary-700">AttendEase</h1><p id="headerDate" class="text-[10px] text-gray-400"></p></div>
     </div>
     <div class="flex items-center gap-2">
       <span id="headerDateM" class="sm:hidden text-[10px] text-gray-400 mr-1"></span>
@@ -226,7 +226,7 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
         <div><label class="ipt-l">Email</label><input id="nEmail" class="ipt" placeholder="email@company.com"/></div>
         <div><label class="ipt-l">Category</label><select id="nCat" class="ipt"><option value="">Select</option><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Intern</option></select></div>
         <div><label class="ipt-l">Shift</label><select id="nShift" class="ipt"><option value="">Select</option><option>Morning</option><option>Evening</option><option>Night</option><option>Rotating</option></select></div>
-        <div><label class="ipt-l">Photo URL</label><input id="nPhoto" class="ipt" placeholder="https://..." oninput="previewAddPhoto()"/><div id="nPhotoPreview" class="mt-2 hidden"><img id="nPhotoImg" class="w-16 h-16 rounded-full object-cover border-2 border-primary-200"/></div></div>
+        <div><label class="ipt-l">Photo</label><input id="nPhoto" class="ipt" placeholder="https://... or upload below" oninput="previewAddPhoto()"/><div id="nPhotoPreview" class="mt-2 hidden"><img id="nPhotoImg" class="w-16 h-16 rounded-full object-cover border-2 border-primary-200"/></div><label class="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-600 text-[11px] font-semibold cursor-pointer"><i class="fa-solid fa-camera"></i><span>Upload Photo</span><input type="file" accept="image/*" capture="user" class="hidden" onchange="uploadEmpPhoto(this,'nPhoto','nPhotoImg','nPhotoPreview')"/></label></div>
         <div class="sm:col-span-2 lg:col-span-3"><label class="ipt-l">Emergency Contact</label><input id="nEmerg" class="ipt" placeholder="Name: 01XXXXXXXXX"/></div>
         <div><label class="ipt-l">CL Balance</label><input id="nCL" type="number" min="0" class="ipt" placeholder="12" value="12"/></div>
         <div><label class="ipt-l">SL Balance</label><input id="nSL" type="number" min="0" class="ipt" placeholder="10" value="10"/></div>
@@ -287,6 +287,13 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
   </div>
 </div>
 
+  <!-- Footer -->
+  <footer class="mt-auto pt-4 pb-2 text-center no-print">
+    <p class="text-[10px] text-gray-400"><span id="footerBrand">AttendEase</span> &copy; <span id="footerYear"></span></p>
+    <p id="footerAddr" class="text-[9px] text-gray-300"></p>
+    <p id="footerPhone" class="text-[9px] text-gray-300"></p>
+    <p class="text-[9px] text-gray-400 mt-0.5">System developed by <span class="font-semibold text-primary-500">Pavel</span></p>
+  </footer>
 </main>
 
 <!-- Sticky Submit Bar (Daily) -->
@@ -303,9 +310,16 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
   <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
     <div class="flex items-center justify-between mb-5"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center"><i class="fa-solid fa-gear text-primary-600"></i></div><div><h3 class="text-base font-bold">Settings</h3><p class="text-[11px] text-gray-400">Backend connection</p></div></div><button onclick="closeSettings()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="mb-4"><label class="ipt-l">GAS Web App URL</label><input id="gasUrl" class="ipt" placeholder="https://script.google.com/macros/s/xxx/exec"/></div>
-    <button onclick="saveSettings()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-400 text-white text-sm font-semibold shadow-md"><i class="fa-solid fa-floppy-disk mr-1"></i>Save</button>
     <button onclick="testConn()" class="w-full mt-2 py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold"><i class="fa-solid fa-wifi mr-1"></i>Test Connection</button>
     <div id="connStatus" class="mt-3 hidden"><div id="connMsg" class="text-xs rounded-lg px-3 py-2"></div></div>
+    <hr class="my-4 border-gray-100">
+    <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-palette mr-1 text-primary-500"></i>Branding & Customization</h4>
+    <div class="mb-3"><label class="ipt-l">Company Name</label><input id="brandName" class="ipt" placeholder="AttendEase"/></div>
+    <div class="mb-3"><label class="ipt-l">Company Address</label><input id="brandAddr" class="ipt" placeholder="123 Business Road, Dhaka, Bangladesh"/></div>
+    <div class="mb-3"><label class="ipt-l">Company Phone</label><input id="brandPhone" class="ipt" placeholder="+880 1XXX-XXXXXX"/></div>
+    <div class="mb-3"><label class="ipt-l">Company Logo URL</label><input id="brandLogo" class="ipt" placeholder="https://..." oninput="previewBrandLogo()"/><div id="brandLogoPreview" class="mt-2 hidden"><img id="brandLogoImg" class="w-12 h-12 rounded-xl object-contain border border-gray-200"/></div></div>
+    <label class="mb-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-600 text-[11px] font-semibold cursor-pointer"><i class="fa-solid fa-upload"></i><span>Upload Logo</span><input type="file" accept="image/*" class="hidden" onchange="uploadBrandLogo(this)"/></label>
+    <button onclick="saveSettings()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-400 text-white text-sm font-semibold shadow-md"><i class="fa-solid fa-floppy-disk mr-1"></i>Save All Settings</button>
   </div>
 </div>
 
@@ -324,7 +338,7 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
       <div><label class="ipt-l">Email</label><input id="eEmail" class="ipt"/></div>
       <div><label class="ipt-l">Category</label><select id="eCat" class="ipt"><option value="">Select</option><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Intern</option></select></div>
       <div><label class="ipt-l">Shift</label><select id="eShift" class="ipt"><option value="">Select</option><option>Morning</option><option>Evening</option><option>Night</option><option>Rotating</option></select></div>
-      <div><label class="ipt-l">Photo URL</label><input id="ePhoto" class="ipt" placeholder="https://..." oninput="previewEditPhoto()"/><div id="ePhotoPreview" class="mt-2 hidden"><img id="ePhotoImg" class="w-16 h-16 rounded-full object-cover border-2 border-primary-200"/></div></div>
+      <div><label class="ipt-l">Photo</label><input id="ePhoto" class="ipt" placeholder="https://... or upload below" oninput="previewEditPhoto()"/><div id="ePhotoPreview" class="mt-2 hidden"><img id="ePhotoImg" class="w-16 h-16 rounded-full object-cover border-2 border-primary-200"/></div><label class="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-600 text-[11px] font-semibold cursor-pointer"><i class="fa-solid fa-camera"></i><span>Change Photo</span><input type="file" accept="image/*" capture="user" class="hidden" onchange="uploadEmpPhoto(this,'ePhoto','ePhotoImg','ePhotoPreview')"/></label></div>
       <div><label class="ipt-l">Emergency Contact</label><input id="eEmerg" class="ipt"/></div>
       <div><label class="ipt-l">CL Balance</label><input id="eCL" type="number" min="0" class="ipt" placeholder="0"/></div>
       <div><label class="ipt-l">SL Balance</label><input id="eSL" type="number" min="0" class="ipt" placeholder="0"/></div>
@@ -415,6 +429,8 @@ document.addEventListener('DOMContentLoaded', function() {
   setDateDefaults();
   updateHdrDate();
   document.getElementById('gasUrl').value = APP.gasUrl;
+  document.getElementById('footerYear').textContent = new Date().getFullYear();
+  applyBranding();
   if (APP.currentUser) showDashboard();
 });
 
@@ -479,6 +495,117 @@ function previewEditPhoto() {
   if (url && url.match(/^https?:\/\/.+/)) { img.src = url; wrap.classList.remove('hidden'); }
   else { wrap.classList.add('hidden'); }
 }
+function previewBrandLogo() {
+  var url = document.getElementById('brandLogo').value.trim();
+  var wrap = document.getElementById('brandLogoPreview');
+  var img = document.getElementById('brandLogoImg');
+  if (url && url.match(/^https?:\/\/.+/)) { img.src = url; wrap.classList.remove('hidden'); }
+  else { wrap.classList.add('hidden'); }
+}
+function uploadEmpPhoto(input, urlId, imgId, previewId) {
+  var file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('Image must be under 5MB', 'error'); return; }
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var maxSz = 300;
+      var w = img.width, h = img.height;
+      if (w > h) { if (w > maxSz) { h = h * maxSz / w; w = maxSz; } } else { if (h > maxSz) { w = w * maxSz / h; h = maxSz; } }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      document.getElementById(urlId).value = 'Uploading...';
+      var wrap = document.getElementById(previewId);
+      var imgEl = document.getElementById(imgId);
+      imgEl.src = dataUrl;
+      wrap.classList.remove('hidden');
+      toast('Uploading photo...', 'info');
+      fetch(APP.gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'uploadPhoto',
+          data: dataUrl,
+          fileName: (urlId === 'nPhoto' ? document.getElementById('nId').value : document.getElementById('eId').value) + '_photo.jpg',
+          mimeType: 'image/jpeg'
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          document.getElementById(urlId).value = d.url;
+          toast('Photo uploaded!', 'success');
+        } else {
+          document.getElementById(urlId).value = '';
+          toast(d.error || 'Upload failed', 'error');
+        }
+      })
+      .catch(function(e) {
+        document.getElementById(urlId).value = '';
+        toast('Upload failed: ' + e.message, 'error');
+      });
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function uploadBrandLogo(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var maxSz = 400;
+      var w = img.width, h = img.height;
+      if (w > h) { if (w > maxSz) { h = h * maxSz / w; w = maxSz; } } else { if (h > maxSz) { w = w * maxSz / h; h = maxSz; } }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var dataUrl = canvas.toDataURL('image/png', 0.9);
+      document.getElementById('brandLogo').value = 'Uploading...';
+      previewBrandLogo();
+      fetch(APP.gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'uploadPhoto', data: dataUrl, fileName: 'company_logo.png', mimeType: 'image/png' })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.success) { document.getElementById('brandLogo').value = d.url; previewBrandLogo(); toast('Logo uploaded!', 'success'); }
+        else { document.getElementById('brandLogo').value = ''; toast('Failed', 'error'); }
+      }).catch(function(e) { document.getElementById('brandLogo').value = ''; toast('Upload failed', 'error'); });
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function applyBranding() {
+  var name = localStorage.getItem('attd_brand_name') || '';
+  var addr = localStorage.getItem('attd_brand_addr') || '';
+  var phone = localStorage.getItem('attd_brand_phone') || '';
+  var logo = localStorage.getItem('attd_brand_logo') || '';
+  var loginTitle = document.getElementById('loginTitle');
+  var loginSub = document.getElementById('loginSubtitle');
+  var loginLogo = document.getElementById('loginLogo');
+  if (name) { loginTitle.textContent = name; }
+  else { loginTitle.textContent = 'AttendEase'; }
+  if (addr || phone) { loginSub.textContent = (addr ? addr : '') + (addr && phone ? ' | ' : '') + (phone ? phone : ''); }
+  else { loginSub.textContent = 'Employee Attendance Management'; }
+  if (logo && logo.match(/^https?:\/\/.+/)) {
+    loginLogo.innerHTML = '<img src="' + logo + '" class="w-full h-full object-contain rounded-2xl" onerror="this.parentElement.innerHTML=\'<i class=fa-solid\\ fa-clipboard-check\\ text-white\\ text-3xl></i>\'"/>';
+    loginLogo.className = 'w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center mb-4 overflow-hidden pulse-r';
+  }
+  var hdrTitle = document.getElementById('hdrTitle');
+  if (name) hdrTitle.textContent = name; else hdrTitle.textContent = 'AttendEase';
+  var ftrName = document.getElementById('footerBrand');
+  if (name) ftrName.textContent = name; else ftrName.textContent = 'AttendEase';
+  var ftrAddr = document.getElementById('footerAddr');
+  ftrAddr.textContent = addr || '';
+  var ftrPhone = document.getElementById('footerPhone');
+  ftrPhone.textContent = phone || '';
+}
 function statCardHtml(label, val, icon, color) {
   return '<div class="stat-card"><div class="flex items-center gap-1.5 mb-0.5"><i class="fa-solid ' + icon + ' text-xs" style="color:' + color + '"></i><span class="text-[10px] text-gray-400">' + label + '</span></div><p class="text-xl font-bold" style="color:' + color + '">' + val + '</p></div>';
 }
@@ -488,6 +615,11 @@ function statCardHtml(label, val, icon, color) {
    ============================================================ */
 function openSettings() {
   document.getElementById('gasUrl').value = APP.gasUrl;
+  document.getElementById('brandName').value = localStorage.getItem('attd_brand_name') || '';
+  document.getElementById('brandAddr').value = localStorage.getItem('attd_brand_addr') || '';
+  document.getElementById('brandPhone').value = localStorage.getItem('attd_brand_phone') || '';
+  document.getElementById('brandLogo').value = localStorage.getItem('attd_brand_logo') || '';
+  previewBrandLogo();
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
@@ -496,7 +628,12 @@ function saveSettings() {
   if (!u) { toast('Enter URL', 'error'); return; }
   APP.gasUrl = u;
   localStorage.setItem('attd_gas_url', u);
-  toast('Saved!', 'success');
+  localStorage.setItem('attd_brand_name', document.getElementById('brandName').value.trim());
+  localStorage.setItem('attd_brand_addr', document.getElementById('brandAddr').value.trim());
+  localStorage.setItem('attd_brand_phone', document.getElementById('brandPhone').value.trim());
+  localStorage.setItem('attd_brand_logo', document.getElementById('brandLogo').value.trim());
+  applyBranding();
+  toast('Settings saved!', 'success');
   closeSettings();
 }
 async function testConn() {
