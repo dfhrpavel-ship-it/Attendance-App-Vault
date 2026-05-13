@@ -476,8 +476,15 @@ function toast(m, t) {
 function avHtml(emp, sz) {
   sz = sz || 40;
   var fs = Math.round(sz / 3);
-  if (emp.Image_URL && emp.Image_URL.toString().match(/^https?:\/\/.+/)) {
-    return '<img src="' + esc(emp.Image_URL) + '" style="width:' + sz + 'px;height:' + sz + 'px;font-size:' + fs + 'px;object-fit:cover;border-radius:50%" onerror="this.outerHTML=\'<div class=av style=width:' + sz + 'px;height:' + sz + 'px;font-size:' + fs + 'px>' + initials(emp.Name) + '</div>\'"/>';
+  var url = emp.Image_URL;
+  // Convert Date objects or unexpected types to string
+  if (url instanceof Date) url = '';
+  url = (url || '').toString().trim();
+  // Auto-fix old Google Drive uc URLs to lh3 (which works in browsers)
+  var m = url.match(/drive\.google\.com\/uc\?export=view&id=([a-zA-Z0-9_-]+)/);
+  if (m) url = 'https://lh3.googleusercontent.com/d/' + m[1] + '=s400';
+  if (url && url.match(/^https?:\/\/.+/)) {
+    return '<img src="' + esc(url) + '" style="width:' + sz + 'px;height:' + sz + 'px;font-size:' + fs + 'px;object-fit:cover;border-radius:50%" onerror="this.outerHTML=\'<div class=av style=width:' + sz + 'px;height:' + sz + 'px;font-size:' + fs + 'px>' + initials(emp.Name) + '</div>\'"/>';
   }
   return '<div class="av" style="width:' + sz + 'px;height:' + sz + 'px;font-size:' + fs + 'px">' + initials(emp.Name) + '</div>';
 }
@@ -745,10 +752,15 @@ function switchTab(t) {
 async function fetchEmployees() {
   if (!APP.gasUrl) return;
   try {
-    var r = await fetch(APP.gasUrl + '?action=employees&_t=' + Date.now());
+    var r = await fetch(APP.gasUrl + '?action=allEmployees&_t=' + Date.now());
     var d = await r.json();
     if (d.success) {
-      APP.employees = d.data || [];
+      var all = d.data || [];
+      APP.allEmployees = all;
+      // APP.employees = active only (for daily attendance, monthly, dashboard)
+      APP.employees = all.filter(function(e) {
+        return !e.Status || e.Status.toString().toLowerCase() === 'active';
+      });
       APP.attendanceMap = {};
       for (var i = 0; i < APP.employees.length; i++) {
         APP.attendanceMap[APP.employees[i].Emp_ID] = '';
@@ -1185,8 +1197,9 @@ function populateDeptFilter() {
   var sel = document.getElementById('empDeptFilter');
   var val = sel.value;
   var depts = {};
-  for (var i = 0; i < APP.employees.length; i++) {
-    if (APP.employees[i].Department) depts[APP.employees[i].Department] = 1;
+  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
+  for (var i = 0; i < source.length; i++) {
+    if (source[i].Department) depts[source[i].Department] = 1;
   }
   var opts = '<option value="">All Departments</option>';
   var keys = Object.keys(depts).sort();
@@ -1216,8 +1229,9 @@ async function addEmployee() {
   var empId = document.getElementById('nId').value.trim();
   var name = document.getElementById('nName').value.trim();
   if (!empId || !name) { toast('ID and Name required', 'error'); return; }
-  for (var i = 0; i < APP.employees.length; i++) {
-    if (APP.employees[i].Emp_ID === empId) { toast('ID "' + empId + '" exists!', 'error'); return; }
+  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
+  for (var i = 0; i < source.length; i++) {
+    if (source[i].Emp_ID === empId) { toast('ID "' + empId + '" exists!', 'error'); return; }
   }
   var btn = document.getElementById('addBtn');
   btn.disabled = true;
@@ -1257,8 +1271,9 @@ async function addEmployee() {
 /* Edit Employee */
 function openEdit(empId) {
   var emp = null;
-  for (var i = 0; i < APP.employees.length; i++) {
-    if (APP.employees[i].Emp_ID === empId) { emp = APP.employees[i]; break; }
+  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
+  for (var i = 0; i < source.length; i++) {
+    if (source[i].Emp_ID === empId) { emp = source[i]; break; }
   }
   if (!emp) return;
   document.getElementById('eId').value = emp.Emp_ID;
@@ -1409,12 +1424,14 @@ function getFilteredEmps() {
   var s = (document.getElementById('empSearch').value || '').toLowerCase();
   var dept = document.getElementById('empDeptFilter').value;
   var stat = document.getElementById('empStatusFilter').value;
+  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
   var result = [];
-  for (var i = 0; i < APP.employees.length; i++) {
-    var e = APP.employees[i];
+  for (var i = 0; i < source.length; i++) {
+    var e = source[i];
     if (s && e.Name.toLowerCase().indexOf(s) < 0 && e.Emp_ID.toLowerCase().indexOf(s) < 0 && (e.Department || '').toLowerCase().indexOf(s) < 0) continue;
     if (dept && e.Department !== dept) continue;
     if (stat === 'Active' && e.Status && e.Status.toLowerCase() !== 'active') continue;
+    if (stat === 'Inactive' && (!e.Status || e.Status.toLowerCase() !== 'inactive')) continue;
     result.push(e);
   }
   return result;
@@ -1482,7 +1499,8 @@ function toggleSelect(empId, checked) {
   renderEmpList();
 }
 function toggleSelectAll(checked) {
-  for (var i = 0; i < APP.employees.length; i++) APP.selectedEmps[APP.employees[i].Emp_ID] = checked;
+  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
+  for (var i = 0; i < source.length; i++) APP.selectedEmps[source[i].Emp_ID] = checked;
   renderEmpList();
 }
 function clearSelection() { APP.selectedEmps = {}; document.getElementById('empSelectAll').checked = false; renderEmpList(); }
@@ -1560,9 +1578,10 @@ async function importCSV() {
   finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload mr-1"></i>Import (' + APP.csvParsed.length + ')'; }
 }
 function exportCSV() {
+  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
   var rows = [['Emp_ID','Name','Designation','Department','Joining_Date','Phone','Email','Category','Shift','Status','CL_Balance','SL_Balance','EL_Balance','PL_Balance']];
-  for (var i = 0; i < APP.employees.length; i++) {
-    var e = APP.employees[i];
+  for (var i = 0; i < source.length; i++) {
+    var e = source[i];
     rows.push([e.Emp_ID, e.Name, e.Designation||'', e.Department||'', e.Joining_Date||'', e.Phone||'', e.Email||'', e.Category||'', e.Shift||'', e.Status||'Active', e.CL_Balance||0, e.SL_Balance||0, e.EL_Balance||0, e.PL_Balance||0]);
   }
   var csv = rows.map(function(r) { return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
@@ -1600,7 +1619,8 @@ function openIDCardPrint(emps) {
 function closeIDCard() { document.getElementById('idCardModal').classList.remove('open'); }
 function bulkPrintIDs() {
   var ids = Object.keys(APP.selectedEmps);
-  var emps = ids.length ? APP.employees.filter(function(e) { return APP.selectedEmps[e.Emp_ID]; }) : APP.employees;
+  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
+  var emps = ids.length ? source.filter(function(e) { return APP.selectedEmps[e.Emp_ID]; }) : source;
   openIDCardPrint(emps);
 }
 
