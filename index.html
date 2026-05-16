@@ -802,13 +802,13 @@ function testConn() {
       msg.textContent = 'Connection successful! Backend is responding.';
       msg.className = 'text-xs rounded-lg px-3 py-2 bg-green-50 text-green-600';
     } else {
-      msg.textContent = 'Backend responded but returned error.';
+      msg.textContent = 'Backend responded but returned error: ' + (r.error || 'Unknown');
       msg.className = 'text-xs rounded-lg px-3 py-2 bg-amber-50 text-amber-600';
     }
     CFG.gasUrl = oldUrl;
   })
   .catch(function(e) {
-    msg.textContent = 'Connection failed: ' + (e.error || 'Check URL');
+    msg.textContent = 'Connection failed: ' + (e.error || e.message || 'Check URL');
     msg.className = 'text-xs rounded-lg px-3 py-2 bg-red-50 text-red-600';
     CFG.gasUrl = oldUrl;
   });
