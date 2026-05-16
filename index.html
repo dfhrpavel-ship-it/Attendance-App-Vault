@@ -2,11 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,user-scalable=yes"/>
 <title>AttendEase - Employee Attendance System</title>
+<meta name="theme-color" content="#1B4332"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="AttendEase"/>
+<link rel="manifest" id="pwaManifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 tailwind.config={theme:{extend:{fontFamily:{poppins:['Poppins','sans-serif']},colors:{primary:{50:'#E8F5EE',100:'#C6E7D5',200:'#95D5B2',300:'#52B788',400:'#40916C',500:'#2D6A4F',600:'#1B4332',700:'#143728',800:'#0D2818'}}}}}
 </script>
@@ -76,6 +82,14 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
 .pulse-r{animation:pr 2.5s ease-in-out infinite}
 @keyframes pr{0%,100%{box-shadow:0 0 0 0 rgba(149,213,178,.4)}50%{box-shadow:0 0 0 16px rgba(149,213,178,0)}}
 .el-row{transition:background .12s}.el-row:hover{background:#f0fdf4}
+.role-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.leave-row{border-left:4px solid transparent;padding:8px 12px;border-radius:0 10px 10px 0;margin-bottom:8px;transition:background .2s}
+.leave-row:hover{background:#f9fafb}
+.leave-pending{border-left-color:#f59e0b;background:#fffbeb}
+.leave-approved{border-left-color:#16a34a;background:#f0fdf4}
+.leave-rejected{border-left-color:#dc2626;background:#fef2f2}
+.progress-bar{height:8px;border-radius:4px;background:#e5e7eb;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;transition:width .5s ease}
 @media print{.no-print{display:none!important}}
 @media(max-width:640px){.tab-btn{padding:7px 12px;font-size:11px}}
 @media(max-width:640px){.gt thead th:nth-child(3),.gt tbody td:nth-child(3){display:none!important}.gt thead th:nth-child(2){left:24px}.gt tbody td:nth-child(2){left:24px}}
@@ -114,9 +128,10 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
     </div>
     <div class="flex items-center gap-2">
       <span id="headerDateM" class="sm:hidden text-[10px] text-gray-400 mr-1"></span>
+      <span id="headerRoleBadge" class="role-badge hidden"></span>
       <div class="flex items-center gap-2 bg-primary-50 rounded-xl px-3 py-1.5"><div class="w-7 h-7 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center"><i class="fa-solid fa-user text-white text-[10px]"></i></div><span id="headerUser" class="text-xs font-semibold text-primary-700 hidden sm:inline"></span></div>
-      <button onclick="openAddEmployee()" title="Add Employee" class="w-9 h-9 rounded-xl bg-primary-50 hover:bg-primary-100 flex items-center justify-center text-primary-600"><i class="fa-solid fa-user-plus text-sm"></i></button>
-      <button onclick="openSettings()" title="Settings" class="w-9 h-9 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-primary-600"><i class="fa-solid fa-gear text-sm"></i></button>
+      <button id="btnAddEmpHdr" onclick="openAddEmployee()" title="Add Employee" class="w-9 h-9 rounded-xl bg-primary-50 hover:bg-primary-100 flex items-center justify-center text-primary-600"><i class="fa-solid fa-user-plus text-sm"></i></button>
+      <button id="btnSettingsHdr" onclick="openSettings()" title="Settings" class="w-9 h-9 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-primary-600"><i class="fa-solid fa-gear text-sm"></i></button>
       <button onclick="handleLogout()" title="Logout" class="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 flex items-center justify-center text-gray-400 hover:text-red-500"><i class="fa-solid fa-right-from-bracket text-sm"></i></button>
     </div>
   </div>
@@ -127,11 +142,14 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
 <!-- Tabs -->
 <div class="flex items-center justify-between gap-3 mb-5 fade-in">
   <div><h2 id="pageTitle" class="text-lg sm:text-xl font-bold text-gray-800">Dashboard</h2><p id="pageSub" class="text-xs text-gray-400 mt-0.5">Overview</p></div>
-  <div class="flex items-center gap-1.5 bg-gray-50 rounded-xl p-1 overflow-x-auto no-print">
+  <div class="flex items-center gap-1.5 bg-gray-50 rounded-xl p-1 overflow-x-auto no-print" id="tabBar">
     <button class="tab-btn active" id="tabDashboard" onclick="switchTab('dashboard')"><i class="fa-solid fa-gauge-high mr-1"></i><span class="hidden sm:inline">Dashboard</span></button>
     <button class="tab-btn" id="tabDaily" onclick="switchTab('daily')"><i class="fa-solid fa-calendar-day mr-1"></i><span class="hidden sm:inline">Daily</span></button>
     <button class="tab-btn" id="tabMonthly" onclick="switchTab('monthly')"><i class="fa-solid fa-table-columns mr-1"></i><span class="hidden sm:inline">Monthly</span></button>
+    <button class="tab-btn" id="tabReports" onclick="switchTab('reports')"><i class="fa-solid fa-chart-line mr-1"></i><span class="hidden sm:inline">Reports</span></button>
     <button class="tab-btn" id="tabEmployees" onclick="switchTab('employees')"><i class="fa-solid fa-users mr-1"></i><span class="hidden sm:inline">Employees</span></button>
+    <button class="tab-btn" id="tabLeaves" onclick="switchTab('leaves')"><i class="fa-solid fa-calendar-check mr-1"></i><span class="hidden sm:inline">Leaves</span></button>
+    <button class="tab-btn" id="tabMyPortal" onclick="switchTab('myPortal')"><i class="fa-solid fa-user-gear mr-1"></i><span class="hidden sm:inline">My Portal</span></button>
     <button class="tab-btn" id="tabActivity" onclick="switchTab('activity')"><i class="fa-solid fa-clock-rotate-left mr-1"></i><span class="hidden sm:inline">Log</span></button>
   </div>
 </div>
@@ -141,20 +159,25 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
   <div class="dash-card mb-5 bg-gradient-to-r from-primary-600 via-primary-500 to-primary-400 text-white border-0 fade-in">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div><h3 class="text-base font-bold" id="dashWelcome">Welcome!</h3><p class="text-xs text-primary-100 mt-0.5" id="dashSub">Here is your attendance summary.</p></div>
-      <div class="flex gap-2 no-print"><button onclick="switchTab('daily')" class="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-semibold"><i class="fa-solid fa-pen mr-1"></i>Mark Attendance</button><button onclick="openAddEmployee()" class="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Add Employee</button></div>
+      <div id="dashActions" class="flex gap-2 no-print"><button onclick="switchTab('daily')" class="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-semibold"><i class="fa-solid fa-pen mr-1"></i>Mark Attendance</button><button onclick="openAddEmployee()" class="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-semibold"><i class="fa-solid fa-user-plus mr-1"></i>Add Employee</button></div>
     </div>
   </div>
   <div id="dashLoading" class="hidden"><div class="flex flex-col items-center py-14"><div class="spinner spinner-d mb-3" style="width:32px;height:32px"></div><p class="text-xs text-gray-400">Loading...</p></div></div>
   <div id="dashStats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5 fade-in"></div>
+  <!-- Dashboard dept ranking widget -->
+  <div id="dashDeptRanking" class="dash-card mb-5 fade-in hidden">
+    <h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-ranking-star mr-2 text-amber-500"></i>Department Performance</h3>
+    <div id="dashDeptRankingBody"></div>
+  </div>
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 fade-in">
     <div class="dash-card"><h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-building mr-2 text-primary-500"></i>Departments</h3><div id="deptBreakdown"></div></div>
     <div class="space-y-5">
       <div class="dash-card"><h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-bolt mr-2 text-amber-500"></i>Quick Actions</h3>
-        <div class="grid grid-cols-2 gap-2">
+        <div id="quickActionsGrid" class="grid grid-cols-2 gap-2">
           <button onclick="switchTab('daily')" class="p-3 rounded-xl bg-primary-50 hover:bg-primary-100 text-left group"><i class="fa-solid fa-calendar-day text-primary-500 mb-1 group-hover:scale-110 transition-transform inline-block"></i><p class="text-[11px] font-bold text-primary-700">Daily Attendance</p></button>
           <button onclick="switchTab('monthly')" class="p-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-left group"><i class="fa-solid fa-table-columns text-blue-500 mb-1 group-hover:scale-110 transition-transform inline-block"></i><p class="text-[11px] font-bold text-blue-700">Monthly View</p></button>
-          <button onclick="openAddEmployee()" class="p-3 rounded-xl bg-green-50 hover:bg-green-100 text-left group"><i class="fa-solid fa-user-plus text-green-500 mb-1 group-hover:scale-110 transition-transform inline-block"></i><p class="text-[11px] font-bold text-green-700">Add Employee</p></button>
-          <button onclick="switchTab('employees')" class="p-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-left group"><i class="fa-solid fa-users text-amber-500 mb-1 group-hover:scale-110 transition-transform inline-block"></i><p class="text-[11px] font-bold text-amber-700">Employee List</p></button>
+          <button onclick="switchTab('reports')" class="p-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-left group"><i class="fa-solid fa-chart-line text-purple-500 mb-1 group-hover:scale-110 transition-transform inline-block"></i><p class="text-[11px] font-bold text-purple-700">Reports</p></button>
+          <button onclick="switchTab('leaves')" class="p-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-left group"><i class="fa-solid fa-calendar-check text-amber-500 mb-1 group-hover:scale-110 transition-transform inline-block"></i><p class="text-[11px] font-bold text-amber-700">Leave Mgmt</p></button>
         </div>
       </div>
       <div class="dash-card"><h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-clock-rotate-left mr-2 text-purple-500"></i>Recently Added</h3><div id="recentEmps"></div></div>
@@ -199,7 +222,6 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
   </div>
   <div id="mLoading" class="hidden"><div class="flex flex-col items-center py-14"><div class="spinner spinner-d mb-3" style="width:32px;height:32px"></div><p class="text-xs text-gray-400">Loading...</p></div></div>
   <div id="monthlyGrid" class="grid-wrapper fade-in"></div>
-  <!-- Monthly Employee Summary Report -->
   <div id="monthlyReport" class="dash-card fade-in mt-5 no-print">
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-sm font-bold text-gray-700"><i class="fa-solid fa-chart-pie mr-2 text-primary-500"></i>Monthly Leave Report</h3>
@@ -210,9 +232,28 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
   </div>
 </div>
 
+<!-- REPORTS VIEW -->
+<div id="reportsView" class="hidden">
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5 fade-in">
+    <div class="flex items-center gap-2"><label class="text-xs font-semibold text-gray-600"><i class="fa-regular fa-calendar mr-1 text-primary-500"></i>Month:</label><input id="analyticsMonth" type="month" class="ipt" style="width:auto" onchange="loadAnalytics()"/></div>
+    <div class="flex gap-2">
+      <button onclick="exportAnalyticsCSV()" class="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-[11px] font-semibold"><i class="fa-solid fa-download mr-1"></i>Export CSV</button>
+    </div>
+  </div>
+  <div id="analyticsLoading" class="hidden"><div class="flex flex-col items-center py-14"><div class="spinner spinner-d mb-3" style="width:32px;height:32px"></div><p class="text-xs text-gray-400">Loading analytics...</p></div></div>
+  <div id="analyticsCharts" class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5 fade-in">
+    <div class="dash-card"><h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-chart-line mr-2 text-blue-500"></i>Attendance Trend</h3><div style="height:260px"><canvas id="trendChart"></canvas></div></div>
+    <div class="dash-card"><h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-chart-pie mr-2 text-purple-500"></i>Department Distribution</h3><div style="height:260px"><canvas id="deptChart"></canvas></div></div>
+    <div class="dash-card lg:col-span-2"><h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-chart-bar mr-2 text-amber-500"></i>Status Breakdown</h3><div style="height:280px"><canvas id="statusChart"></canvas></div></div>
+  </div>
+  <div id="deptRankingCard" class="dash-card fade-in">
+    <h3 class="text-sm font-bold text-gray-700 mb-4"><i class="fa-solid fa-ranking-star mr-2 text-amber-500"></i>Department Performance Ranking</h3>
+    <div id="deptRankingBody"></div>
+  </div>
+</div>
+
 <!-- EMPLOYEES VIEW -->
 <div id="employeesView" class="hidden">
-  <!-- Add Form -->
   <div class="dash-card mb-5 fade-in no-print">
     <div class="flex items-center justify-between mb-4"><h3 class="text-sm font-bold text-gray-800"><i class="fa-solid fa-user-plus mr-2 text-primary-500"></i>Add New Employee</h3><button onclick="document.getElementById('addForm').classList.toggle('hidden')" class="text-xs font-semibold text-primary-600"><i class="fa-solid fa-chevron-down mr-1"></i>Toggle</button></div>
     <div id="addForm" class="hidden">
@@ -239,7 +280,6 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
       </div>
     </div>
   </div>
-  <!-- Actions Bar -->
   <div class="dash-card mb-4 fade-in no-print">
     <div class="flex flex-wrap items-center gap-3">
       <input id="empSearch" class="ipt" style="width:180px;padding:7px 11px;font-size:12px" placeholder="Search name/ID..." oninput="renderEmpList()"/>
@@ -258,7 +298,6 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
       <button onclick="clearSelection()" class="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-500 text-[11px] font-semibold">Clear</button>
     </div>
   </div>
-  <!-- Employee List -->
   <div class="dash-card fade-in">
     <div class="overflow-x-auto">
       <table class="w-full text-sm"><thead><tr class="border-b-2 border-primary-100">
@@ -278,6 +317,28 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
   </div>
 </div>
 
+<!-- LEAVES VIEW -->
+<div id="leavesView" class="hidden">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 fade-in">
+    <div class="stat-card"><p class="text-[10px] text-gray-400 mb-0.5">Total Leaves</p><p id="lvTotal" class="text-xl font-bold text-gray-800">0</p></div>
+    <div class="stat-card"><p class="text-[10px] text-gray-400 mb-0.5">Pending</p><p id="lvPending" class="text-xl font-bold text-amber-500">0</p></div>
+    <div class="stat-card"><p class="text-[10px] text-gray-400 mb-0.5">Approved</p><p id="lvApproved" class="text-xl font-bold text-green-600">0</p></div>
+    <div class="stat-card"><p class="text-[10px] text-gray-400 mb-0.5">Rejected</p><p id="lvRejected" class="text-xl font-bold text-red-500">0</p></div>
+  </div>
+  <div class="flex items-center gap-2 mb-4 fade-in">
+    <label class="text-xs font-semibold text-gray-600">Filter:</label>
+    <select id="leaveStatusFilter" class="ipt" style="width:auto;padding:7px 10px;font-size:12px" onchange="renderLeaves()"><option value="">All</option><option value="Pending">Pending</option><option value="Approved">Approved</option><option value="Rejected">Rejected</option></select>
+  </div>
+  <div id="leavesLoading" class="hidden"><div class="flex flex-col items-center py-14"><div class="spinner spinner-d mb-3" style="width:32px;height:32px"></div><p class="text-xs text-gray-400">Loading leaves...</p></div></div>
+  <div id="leavesBody" class="dash-card fade-in"></div>
+</div>
+
+<!-- MY PORTAL VIEW -->
+<div id="myPortalView" class="hidden">
+  <div id="portalLoading" class="hidden"><div class="flex flex-col items-center py-14"><div class="spinner spinner-d mb-3" style="width:32px;height:32px"></div><p class="text-xs text-gray-400">Loading your data...</p></div></div>
+  <div id="portalContent"></div>
+</div>
+
 <!-- ACTIVITY LOG VIEW -->
 <div id="activityView" class="hidden">
   <div class="dash-card fade-in">
@@ -292,7 +353,7 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
     <p class="text-[10px] text-gray-400"><span id="footerBrand">AttendEase</span> &copy; <span id="footerYear"></span></p>
     <p id="footerAddr" class="text-[9px] text-gray-300"></p>
     <p id="footerPhone" class="text-[9px] text-gray-300"></p>
-    <p class="text-[9px] text-gray-400 mt-0.5">System developed by <span class="font-semibold text-primary-500">PAVEL, HR GENERALIST</span></p>
+    <p class="text-[9px] text-gray-400 mt-0.5">System developed by <span class="font-semibold text-primary-500">Pavel</span></p>
   </footer>
 </main>
 
@@ -307,7 +368,7 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
 
 <!-- SETTINGS MODAL -->
 <div id="settingsModal" class="modal-overlay" onclick="if(event.target===this)closeSettings()">
-  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto">
     <div class="flex items-center justify-between mb-5"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center"><i class="fa-solid fa-gear text-primary-600"></i></div><div><h3 class="text-base font-bold">Settings</h3><p class="text-[11px] text-gray-400">Backend connection</p></div></div><button onclick="closeSettings()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button></div>
     <div class="mb-4"><label class="ipt-l">GAS Web App URL</label><input id="gasUrl" class="ipt" placeholder="https://script.google.com/macros/s/xxx/exec"/></div>
     <button onclick="testConn()" class="w-full mt-2 py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold"><i class="fa-solid fa-wifi mr-1"></i>Test Connection</button>
@@ -319,6 +380,10 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
     <div class="mb-3"><label class="ipt-l">Company Phone</label><input id="brandPhone" class="ipt" placeholder="+880 1XXX-XXXXXX"/></div>
     <div class="mb-3"><label class="ipt-l">Company Logo URL</label><input id="brandLogo" class="ipt" placeholder="https://..." oninput="previewBrandLogo()"/><div id="brandLogoPreview" class="mt-2 hidden"><img id="brandLogoImg" class="w-12 h-12 rounded-xl object-contain border border-gray-200"/></div></div>
     <label class="mb-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-600 text-[11px] font-semibold cursor-pointer"><i class="fa-solid fa-upload"></i><span>Upload Logo</span><input type="file" accept="image/*" class="hidden" onchange="uploadBrandLogo(this)"/></label>
+    <hr class="my-4 border-gray-100">
+    <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-shield-halved mr-1 text-primary-500"></i>Device Management <span class="badge bg-primary-50 text-primary-600 ml-1">Admin</span></h4>
+    <button id="btnViewLoginHistory" onclick="openDeviceModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3"><i class="fa-solid fa-laptop mr-1"></i>View Login History</button>
+    <button id="btnInstallPWA" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3 hidden" onclick="installPWA()"><i class="fa-solid fa-download mr-1"></i>Install App</button>
     <button onclick="saveSettings()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-400 text-white text-sm font-semibold shadow-md"><i class="fa-solid fa-floppy-disk mr-1"></i>Save All Settings</button>
   </div>
 </div>
@@ -377,1331 +442,29 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
   </div>
 </div>
 
+<!-- LEAVE ACTION MODAL -->
+<div id="leaveActionModal" class="modal-overlay" onclick="if(event.target===this)closeLeaveAction()">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+    <div class="flex items-center justify-between mb-4"><h3 id="leaveActionTitle" class="text-base font-bold"></h3><button onclick="closeLeaveAction()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button></div>
+    <input type="hidden" id="laLeaveId"/><input type="hidden" id="laAction"/>
+    <div class="mb-3"><label class="ipt-l">Comment (optional)</label><textarea id="laComment" class="ipt" rows="2" placeholder="Add a comment..."></textarea></div>
+    <div id="laLeaveInfo" class="text-xs text-gray-500 mb-3"></div>
+    <div class="flex gap-2"><button id="laConfirmBtn" onclick="confirmLeaveAction()" class="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold shadow-md"></button><button onclick="closeLeaveAction()" class="px-4 py-2.5 rounded-xl bg-gray-100 text-gray-500 text-sm font-semibold">Cancel</button></div>
+  </div>
+</div>
+
+<!-- DEVICE MANAGEMENT MODAL -->
+<div id="deviceModal" class="modal-overlay" onclick="if(event.target===this)closeDeviceModal()">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4"><h3 class="text-base font-bold"><i class="fa-solid fa-laptop mr-2 text-primary-500"></i>Device Management & Login History</h3><button onclick="closeDeviceModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button></div>
+    <div id="deviceLoading" class="hidden text-center py-10"><div class="spinner spinner-d mx-auto mb-3" style="width:28px;height:28px"></div><p class="text-xs text-gray-400">Loading...</p></div>
+    <div id="deviceBody" class="overflow-x-auto"></div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="toast" class="toast"></div>
 <!-- Dropdown -->
 <div id="dd" class="dd-menu hidden"></div>
 
 <script>
-/* ============================================================
-   STATE & CONFIG
-   ============================================================ */
-var APP = {
-  gasUrl: localStorage.getItem('attd_gas_url') || '',
-  currentUser: JSON.parse(sessionStorage.getItem('attd_user') || 'null'),
-  employees: [],
-  allEmployees: [],
-  attendanceMap: {},
-  monthlyData: {},
-  currentTab: 'dashboard',
-  isSubmitting: false,
-  dashData: null,
-  empPage: 1,
-  empPerPage: 15,
-  selectedEmps: {},
-  csvParsed: []
-};
-
-/* 14 Attendance Status Codes */
-var S = {
-  P:   {l:'Present',            c:'#2563eb'},
-  LP:  {l:'Late Present',       c:'#7c3aed'},
-  A:   {l:'Absent',             c:'#dc2626'},
-  CL:  {l:'Casual Leave',       c:'#16a34a'},
-  UPL: {l:'Unpaid Leave',       c:'#ea580c'},
-  WHD: {l:'Weekly Holiday',     c:'#eab308'},
-  SL:  {l:'Sick Leave',         c:'#6b7280'},
-  MCL: {l:'Marriage & Comp. Leave', c:'#ec4899'},
-  FL:  {l:'Festival Leave',     c:'#059669'},
-  PL:  {l:'Paternity Leave',    c:'#0891b2'},
-  EL:  {l:'Earned Leave',       c:'#4f46e5'},
-  GHD: {l:'Govt. Leave',        c:'#b45309'},
-  ODW: {l:'WHD Day Work',       c:'#0ea5e9'},
-  HDW: {l:'Holiday Work',       c:'#6366f1'}
-};
-var STATUS_KEYS = Object.keys(S);
-var DCOLS = ['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2','#ec4899','#ea580c','#059669','#4f46e5'];
-
-/* ============================================================
-   INIT
-   ============================================================ */
-document.addEventListener('DOMContentLoaded', function() {
-  setDateDefaults();
-  updateHdrDate();
-  document.getElementById('gasUrl').value = APP.gasUrl;
-  document.getElementById('footerYear').textContent = new Date().getFullYear();
-  applyBranding();
-  if (APP.currentUser) showDashboard();
-});
-
-function setDateDefaults() {
-  document.getElementById('attDate').value = fmtISO(new Date());
-  var n = new Date();
-  document.getElementById('monthPicker').value = n.getFullYear() + '-' + p2(n.getMonth() + 1);
-}
-function fmtISO(d) { return d.getFullYear() + '-' + p2(d.getMonth()+1) + '-' + p2(d.getDate()); }
-function p2(n) { return String(n).padStart(2, '0'); }
-function updateHdrDate() {
-  var t = new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('headerDate').textContent = t;
-  document.getElementById('headerDateM').textContent = t;
-}
-
-/* ============================================================
-   HELPERS
-   ============================================================ */
-function esc(s) {
-  if (!s) return '';
-  var d = document.createElement('div');
-  d.appendChild(document.createTextNode(s));
-  return d.innerHTML;
-}
-function initials(n) {
-  if (!n) return '?';
-  var p = n.trim().split(/\s+/);
-  return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : n.substring(0,2).toUpperCase();
-}
-function daysIn(ym) { var ym2 = ym.split('-').map(Number); return new Date(ym2[0], ym2[1], 0).getDate(); }
-function dow(s) { return new Date(s + 'T00:00:00').getDay(); }
-function dn(s) { return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dow(s)]; }
-function toast(m, t) {
-  var el = document.getElementById('toast');
-  el.textContent = m;
-  el.className = 'toast ' + (t || 'info');
-  void el.offsetWidth;
-  el.classList.add('show');
-  clearTimeout(el._t);
-  el._t = setTimeout(function() { el.classList.remove('show'); }, 3000);
-}
-function avHtml(emp, sz) {
-  sz = sz || 40;
-  var fs = Math.round(sz / 3);
-  var url = emp.Image_URL;
-  // Convert Date objects or unexpected types to string
-  if (url instanceof Date) url = '';
-  url = (url || '').toString().trim();
-  // Auto-fix old Google Drive uc URLs to lh3 (which works in browsers)
-  var m = url.match(/drive\.google\.com\/uc\?export=view&id=([a-zA-Z0-9_-]+)/);
-  if (m) url = 'https://lh3.googleusercontent.com/d/' + m[1] + '=s400';
-  if (url && url.match(/^https?:\/\/.+/)) {
-    return '<img src="' + esc(url) + '" style="width:' + sz + 'px;height:' + sz + 'px;font-size:' + fs + 'px;object-fit:cover;border-radius:50%" onerror="this.outerHTML=\'<div class=av style=width:' + sz + 'px;height:' + sz + 'px;font-size:' + fs + 'px>' + initials(emp.Name) + '</div>\'"/>';
-  }
-  return '<div class="av" style="width:' + sz + 'px;height:' + sz + 'px;font-size:' + fs + 'px">' + initials(emp.Name) + '</div>';
-}
-function previewAddPhoto() {
-  var url = document.getElementById('nPhoto').value.trim();
-  var wrap = document.getElementById('nPhotoPreview');
-  var img = document.getElementById('nPhotoImg');
-  if (url && url.match(/^https?:\/\/.+/)) { img.src = url; wrap.classList.remove('hidden'); }
-  else { wrap.classList.add('hidden'); }
-}
-function previewEditPhoto() {
-  var url = document.getElementById('ePhoto').value.trim();
-  var wrap = document.getElementById('ePhotoPreview');
-  var img = document.getElementById('ePhotoImg');
-  if (url && url.match(/^https?:\/\/.+/)) { img.src = url; wrap.classList.remove('hidden'); }
-  else { wrap.classList.add('hidden'); }
-}
-function previewBrandLogo() {
-  var url = document.getElementById('brandLogo').value.trim();
-  var wrap = document.getElementById('brandLogoPreview');
-  var img = document.getElementById('brandLogoImg');
-  if (url && url.match(/^https?:\/\/.+/)) { img.src = url; wrap.classList.remove('hidden'); }
-  else { wrap.classList.add('hidden'); }
-}
-function uploadEmpPhoto(input, urlId, imgId, previewId) {
-  var file = input.files[0];
-  if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { toast('Image must be under 5MB', 'error'); return; }
-  var reader = new FileReader();
-  reader.onload = function(ev) {
-    var img = new Image();
-    img.onload = function() {
-      var canvas = document.createElement('canvas');
-      var maxSz = 300;
-      var w = img.width, h = img.height;
-      if (w > h) { if (w > maxSz) { h = h * maxSz / w; w = maxSz; } } else { if (h > maxSz) { w = w * maxSz / h; h = maxSz; } }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      var dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      document.getElementById(urlId).value = 'Uploading...';
-      var wrap = document.getElementById(previewId);
-      var imgEl = document.getElementById(imgId);
-      imgEl.src = dataUrl;
-      wrap.classList.remove('hidden');
-      toast('Uploading photo...', 'info');
-      fetch(APP.gasUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: 'uploadPhoto',
-          data: dataUrl,
-          fileName: (urlId === 'nPhoto' ? document.getElementById('nId').value : document.getElementById('eId').value) + '_photo.jpg',
-          mimeType: 'image/jpeg'
-        })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d.success) {
-          document.getElementById(urlId).value = d.url;
-          toast('Photo uploaded!', 'success');
-        } else {
-          document.getElementById(urlId).value = '';
-          toast(d.error || 'Upload failed', 'error');
-        }
-      })
-      .catch(function(e) {
-        document.getElementById(urlId).value = '';
-        toast('Upload failed: ' + e.message, 'error');
-      });
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-function uploadBrandLogo(input) {
-  var file = input.files[0];
-  if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(ev) {
-    var img = new Image();
-    img.onload = function() {
-      var canvas = document.createElement('canvas');
-      var maxSz = 400;
-      var w = img.width, h = img.height;
-      if (w > h) { if (w > maxSz) { h = h * maxSz / w; w = maxSz; } } else { if (h > maxSz) { w = w * maxSz / h; h = maxSz; } }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      var dataUrl = canvas.toDataURL('image/png', 0.9);
-      document.getElementById('brandLogo').value = 'Uploading...';
-      previewBrandLogo();
-      fetch(APP.gasUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'uploadPhoto', data: dataUrl, fileName: 'company_logo.png', mimeType: 'image/png' })
-      }).then(function(r) { return r.json(); }).then(function(d) {
-        if (d.success) { document.getElementById('brandLogo').value = d.url; previewBrandLogo(); toast('Logo uploaded!', 'success'); }
-        else { document.getElementById('brandLogo').value = ''; toast('Failed', 'error'); }
-      }).catch(function(e) { document.getElementById('brandLogo').value = ''; toast('Upload failed', 'error'); });
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-function applyBranding() {
-  var name = localStorage.getItem('attd_brand_name') || '';
-  var addr = localStorage.getItem('attd_brand_addr') || '';
-  var phone = localStorage.getItem('attd_brand_phone') || '';
-  var logo = localStorage.getItem('attd_brand_logo') || '';
-  var loginTitle = document.getElementById('loginTitle');
-  var loginSub = document.getElementById('loginSubtitle');
-  var loginLogo = document.getElementById('loginLogo');
-  if (name) { loginTitle.textContent = name; }
-  else { loginTitle.textContent = 'AttendEase'; }
-  if (addr || phone) { loginSub.textContent = (addr ? addr : '') + (addr && phone ? ' | ' : '') + (phone ? phone : ''); }
-  else { loginSub.textContent = 'Employee Attendance Management'; }
-  if (logo && logo.match(/^https?:\/\/.+/)) {
-    loginLogo.innerHTML = '<img src="' + logo + '" class="w-full h-full object-contain rounded-2xl" onerror="this.parentElement.innerHTML=\'<i class=fa-solid\\ fa-clipboard-check\\ text-white\\ text-3xl></i>\'"/>';
-    loginLogo.className = 'w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center mb-4 overflow-hidden pulse-r';
-  }
-  var hdrTitle = document.getElementById('hdrTitle');
-  if (name) hdrTitle.textContent = name; else hdrTitle.textContent = 'AttendEase';
-  var ftrName = document.getElementById('footerBrand');
-  if (name) ftrName.textContent = name; else ftrName.textContent = 'AttendEase';
-  var ftrAddr = document.getElementById('footerAddr');
-  ftrAddr.textContent = addr || '';
-  var ftrPhone = document.getElementById('footerPhone');
-  ftrPhone.textContent = phone || '';
-}
-function statCardHtml(label, val, icon, color) {
-  return '<div class="stat-card"><div class="flex items-center gap-1.5 mb-0.5"><i class="fa-solid ' + icon + ' text-xs" style="color:' + color + '"></i><span class="text-[10px] text-gray-400">' + label + '</span></div><p class="text-xl font-bold" style="color:' + color + '">' + val + '</p></div>';
-}
-
-/* ============================================================
-   SETTINGS
-   ============================================================ */
-function openSettings() {
-  document.getElementById('gasUrl').value = APP.gasUrl;
-  document.getElementById('brandName').value = localStorage.getItem('attd_brand_name') || '';
-  document.getElementById('brandAddr').value = localStorage.getItem('attd_brand_addr') || '';
-  document.getElementById('brandPhone').value = localStorage.getItem('attd_brand_phone') || '';
-  document.getElementById('brandLogo').value = localStorage.getItem('attd_brand_logo') || '';
-  previewBrandLogo();
-  document.getElementById('settingsModal').classList.add('open');
-}
-function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
-function saveSettings() {
-  var u = document.getElementById('gasUrl').value.trim();
-  if (!u) { toast('Enter URL', 'error'); return; }
-  APP.gasUrl = u;
-  localStorage.setItem('attd_gas_url', u);
-  localStorage.setItem('attd_brand_name', document.getElementById('brandName').value.trim());
-  localStorage.setItem('attd_brand_addr', document.getElementById('brandAddr').value.trim());
-  localStorage.setItem('attd_brand_phone', document.getElementById('brandPhone').value.trim());
-  localStorage.setItem('attd_brand_logo', document.getElementById('brandLogo').value.trim());
-  applyBranding();
-  toast('Settings saved!', 'success');
-  closeSettings();
-}
-async function testConn() {
-  var u = document.getElementById('gasUrl').value.trim();
-  if (!u) { toast('Enter URL', 'error'); return; }
-  var m = document.getElementById('connMsg');
-  document.getElementById('connStatus').classList.remove('hidden');
-  m.className = 'text-xs rounded-lg px-3 py-2 bg-blue-50 text-blue-600';
-  m.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Testing...';
-  try {
-    var r = await fetch(u + '?action=employees&_t=' + Date.now());
-    var d = await r.json();
-    m.className = 'text-xs rounded-lg px-3 py-2 bg-green-50 text-green-600';
-    m.innerHTML = d.success ? '<i class="fa-solid fa-check mr-1"></i>Connected! ' + (d.data ? d.data.length : 0) + ' employees' : '<i class="fa-solid fa-xmark mr-1"></i>Error';
-  } catch(e) {
-    m.className = 'text-xs rounded-lg px-3 py-2 bg-red-50 text-red-600';
-    m.innerHTML = '<i class="fa-solid fa-xmark mr-1"></i>' + e.message;
-  }
-}
-
-/* ============================================================
-   AUTH
-   ============================================================ */
-async function handleLogin() {
-  var u = document.getElementById('loginUser').value.trim();
-  var p = document.getElementById('loginPass').value;
-  var er = document.getElementById('loginError');
-  var em = document.getElementById('loginErrorMsg');
-  var btn = document.getElementById('loginBtn');
-  er.classList.add('hidden');
-  if (!APP.gasUrl) { toast('Set Backend URL first', 'error'); openSettings(); return; }
-  if (!u || !p) { em.textContent = 'Enter both fields'; er.classList.remove('hidden'); return; }
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
-  try {
-    var r = await fetch(APP.gasUrl + '?action=login&username=' + encodeURIComponent(u) + '&password=' + encodeURIComponent(p) + '&_t=' + Date.now());
-    var d = await r.json();
-    if (d.success) {
-      APP.currentUser = d.data;
-      sessionStorage.setItem('attd_user', JSON.stringify(d.data));
-      toast('Welcome, ' + d.data.displayName + '!', 'success');
-      showDashboard();
-    } else {
-      em.textContent = d.error || 'Login failed';
-      er.classList.remove('hidden');
-    }
-  } catch(e) {
-    em.textContent = e.message;
-    er.classList.remove('hidden');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<span>Sign In</span><i class="fa-solid fa-arrow-right-to-bracket"></i>';
-  }
-}
-function handleLogout() {
-  APP.currentUser = null;
-  APP.employees = [];
-  APP.allEmployees = [];
-  APP.attendanceMap = {};
-  APP.monthlyData = {};
-  APP.dashData = null;
-  sessionStorage.removeItem('attd_user');
-  showLogin();
-  toast('Logged out', 'info');
-}
-function showLogin() {
-  document.getElementById('loginScreen').classList.remove('hidden');
-  document.getElementById('dashboard').classList.add('hidden');
-}
-function showDashboard() {
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('dashboard').classList.remove('hidden');
-  document.getElementById('headerUser').textContent = APP.currentUser.displayName;
-  fetchEmployees();
-  loadDash();
-}
-
-/* ============================================================
-   TABS
-   ============================================================ */
-function switchTab(t) {
-  APP.currentTab = t;
-  var tabs = ['dashboard','daily','monthly','employees','activity'];
-  for (var i = 0; i < tabs.length; i++) {
-    var x = tabs[i];
-    var el = document.getElementById(x + 'View');
-    if (el) el.classList.toggle('hidden', x !== t);
-    var tb = document.getElementById('tab' + x.charAt(0).toUpperCase() + x.slice(1));
-    if (tb) tb.classList.toggle('active', x === t);
-  }
-  document.getElementById('submitBar').classList.toggle('hidden', t !== 'daily');
-  var titles = {
-    dashboard: ['Dashboard', 'Overview'],
-    daily: ['Daily Attendance', "Mark today's attendance"],
-    monthly: ['Monthly Overview', 'Full month grid'],
-    employees: ['Employee Management', 'Add, view, manage'],
-    activity: ['Activity Log', 'System actions']
-  };
-  document.getElementById('pageTitle').textContent = titles[t][0];
-  document.getElementById('pageSub').textContent = titles[t][1];
-  if (t === 'monthly' && APP.employees.length > 0) loadMonthlyData();
-  if (t === 'employees') { populateDeptFilter(); renderEmpList(); }
-  if (t === 'activity') loadActivityLog();
-}
-
-/* ============================================================
-   FETCH EMPLOYEES
-   ============================================================ */
-async function fetchEmployees() {
-  if (!APP.gasUrl) return;
-  try {
-    var r = await fetch(APP.gasUrl + '?action=allEmployees&_t=' + Date.now());
-    var d = await r.json();
-    if (d.success) {
-      var all = d.data || [];
-      APP.allEmployees = all;
-      // APP.employees = active only (for daily attendance, monthly, dashboard)
-      APP.employees = all.filter(function(e) {
-        return !e.Status || e.Status.toString().toLowerCase() === 'active';
-      });
-      APP.attendanceMap = {};
-      for (var i = 0; i < APP.employees.length; i++) {
-        APP.attendanceMap[APP.employees[i].Emp_ID] = '';
-      }
-      loadAttForDate();
-    }
-  } catch(e) { console.warn(e); }
-}
-
-/* ============================================================
-   DASHBOARD
-   ============================================================ */
-async function loadDash() {
-  if (APP.currentUser) document.getElementById('dashWelcome').textContent = 'Welcome, ' + APP.currentUser.displayName + '!';
-  document.getElementById('dashLoading').classList.remove('hidden');
-  try {
-    var r = await fetch(APP.gasUrl + '?action=dashboardStats&_t=' + Date.now());
-    var d = await r.json();
-    if (d.success) { APP.dashData = d.data; renderDash(); }
-  } catch(e) {}
-  document.getElementById('dashLoading').classList.add('hidden');
-}
-function renderDash() {
-  var d = APP.dashData;
-  if (!d) return;
-  var ts = d.todayStats;
-  var pCount = (ts.P || 0) + (ts.LP || 0);
-  var aCount = ts.A || 0;
-  var leaveCodes = ['CL','UPL','SL','MCL','FL','PL','EL'];
-  var leaveCount = 0;
-  for (var i = 0; i < leaveCodes.length; i++) leaveCount += (ts[leaveCodes[i]] || 0);
-  document.getElementById('dashStats').innerHTML =
-    statCardHtml('Employees', d.totalEmployees, 'fa-users', '#2D6A4F') +
-    statCardHtml('Present', pCount, 'fa-circle-check', '#2563eb') +
-    statCardHtml('Absent', aCount, 'fa-circle-xmark', '#dc2626') +
-    statCardHtml('Leave', leaveCount, 'fa-calendar-minus', '#f59e0b') +
-    statCardHtml('Unmarked', ts.Unmarked || 0, 'fa-circle-question', '#9ca3af') +
-    statCardHtml('Month', d.monthRecords, 'fa-database', '#16a34a');
-  /* Departments */
-  var de = document.getElementById('deptBreakdown');
-  var deps = Object.entries(d.departments).sort(function(a,b){ return b[1]-a[1]; });
-  if (!deps.length) {
-    de.innerHTML = '<p class="text-xs text-gray-400">No departments.</p>';
-  } else {
-    var mx = Math.max.apply(null, deps.map(function(x){ return x[1]; }));
-    de.innerHTML = deps.map(function(dp, idx) {
-      var w = Math.max(Math.round(dp[1]/mx*100), 8);
-      var cl = DCOLS[idx % DCOLS.length];
-      return '<div class="flex items-center gap-2 mb-2"><span class="text-[11px] font-medium text-gray-600 w-20 truncate">' + esc(dp[0]) + '</span><div class="flex-1 h-5 bg-gray-100 rounded-lg overflow-hidden"><div class="h-full rounded-lg" style="width:' + w + '%;background:' + cl + '"></div></div><span class="text-[11px] font-bold text-gray-700 w-12 text-right">' + dp[1] + '</span></div>';
-    }).join('');
-  }
-  /* Recent */
-  var re = document.getElementById('recentEmps');
-  if (d.recentEmployees && d.recentEmployees.length) {
-    re.innerHTML = d.recentEmployees.map(function(e) {
-      return '<div class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-50">' + avHtml(e,28) + '<div class="flex-1 min-w-0"><p class="text-[11px] font-semibold text-gray-700 truncate">' + esc(e.name) + '</p><p class="text-[10px] text-gray-400">' + esc(e.designation||'') + (e.department ? ' &middot; ' + esc(e.department) : '') + '</p></div></div>';
-    }).join('');
-  } else {
-    re.innerHTML = '<p class="text-xs text-gray-400">No employees.</p>';
-  }
-}
-
-/* ============================================================
-   DAILY ATTENDANCE
-   ============================================================ */
-async function loadAttForDate() {
-  var date = document.getElementById('attDate').value;
-  if (!date || !APP.gasUrl || !APP.employees.length) return;
-  try {
-    var r = await fetch(APP.gasUrl + '?action=attendance&date=' + encodeURIComponent(date) + '&_t=' + Date.now());
-    var d = await r.json();
-    if (d.success && d.data) {
-      for (var i = 0; i < APP.employees.length; i++) APP.attendanceMap[APP.employees[i].Emp_ID] = '';
-      for (var j = 0; j < d.data.length; j++) {
-        var rec = d.data[j];
-        if (APP.attendanceMap.hasOwnProperty(rec.Emp_ID)) APP.attendanceMap[rec.Emp_ID] = rec.Status;
-      }
-    }
-  } catch(e) {}
-  renderGrid();
-  updateDStats();
-}
-function renderGrid() {
-  var g = document.getElementById('empGrid');
-  var em = document.getElementById('emptyState');
-  document.getElementById('loadState').classList.add('hidden');
-  if (!APP.employees.length) { g.innerHTML = ''; em.classList.remove('hidden'); return; }
-  em.classList.add('hidden');
-  var h = '';
-  for (var i = 0; i < APP.employees.length; i++) {
-    var emp = APP.employees[i];
-    var st = APP.attendanceMap[emp.Emp_ID] || '';
-    var delay = Math.min(i * 0.03, 0.5);
-    h += '<div class="emp-card p-4 fade-in" style="animation-delay:' + delay + 's;opacity:0">';
-    h += '<div class="flex items-start gap-3">' + avHtml(emp, 48) + '<div class="flex-1 min-w-0">';
-    h += '<h3 class="text-sm font-bold text-gray-800 truncate">' + esc(emp.Name) + '</h3>';
-    h += '<p class="text-[11px] text-gray-400 truncate">' + esc(emp.Designation || '') + '</p>';
-    if (emp.Department) h += '<span class="badge bg-primary-50 text-primary-600 mt-1">' + esc(emp.Department) + '</span>';
-    h += '</div></div>';
-    h += '<div class="flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-50 flex-wrap">';
-    h += buildAttBtn(emp.Emp_ID, st, 'P');
-    h += buildAttBtn(emp.Emp_ID, st, 'LP');
-    h += buildAttBtn(emp.Emp_ID, st, 'A');
-    h += '<button onclick="openDailyMore(event,\'' + esc(emp.Emp_ID) + '\')" class="att-btn" style="width:auto;padding:0 10px;font-size:11px;color:#6b7280;border-color:#d1d5db" title="More statuses"><i class="fa-solid fa-ellipsis"></i></button>';
-    if (st && S[st]) {
-      h += '<span class="ml-auto badge" style="background:' + S[st].c + '15;color:' + S[st].c + '">' + st + ' &middot; ' + S[st].l + '</span>';
-    }
-    h += '</div></div>';
-  }
-  g.innerHTML = h;
-  updateDStats();
-  updateSubmitSum();
-}
-function buildAttBtn(empId, currentStatus, code) {
-  var active = currentStatus === code;
-  var c = S[code].c;
-  var style = active ? 'background:' + c + ';border-color:' + c + ';color:#fff;box-shadow:0 3px 10px ' + c + '33' : '';
-  return '<button class="att-btn ' + (active ? 'active' : '') + '" style="' + style + '" onclick="setAtt(\'' + esc(empId) + '\',\'' + code + '\')">' + code + '</button>';
-}
-function setAtt(empId, status) {
-  APP.attendanceMap[empId] = status;
-  renderGrid();
-}
-function openDailyMore(event, empId) {
-  event.stopPropagation();
-  var dd = document.getElementById('dd');
-  var h = '';
-  for (var i = 0; i < STATUS_KEYS.length; i++) {
-    var code = STATUS_KEYS[i];
-    var active = APP.attendanceMap[empId] === code;
-    h += '<button onclick="setAtt(\'' + empId + '\',\'' + code + '\');closeDD()"' + (active ? ' style="background:#f0fdf4"' : '') + '>';
-    h += '<span class="dd-dot" style="background:' + S[code].c + '"></span>' + code + ' &mdash; ' + S[code].l;
-    if (active) h += ' <i class="fa-solid fa-check text-primary-500 ml-auto"></i>';
-    h += '</button>';
-  }
-  h += '<hr class="my-1 border-gray-100"><button onclick="setAtt(\'' + empId + '\',\'\');closeDD()"><span class="dd-dot" style="background:#d1d5db"></span>Clear</button>';
-  dd.innerHTML = h;
-  var r = event.target.closest('.att-btn').getBoundingClientRect();
-  dd.style.top = (r.bottom + 4) + 'px';
-  dd.style.left = Math.min(r.left, window.innerWidth - 180) + 'px';
-  dd.classList.remove('hidden');
-}
-function markAll(s) {
-  for (var i = 0; i < APP.employees.length; i++) APP.attendanceMap[APP.employees[i].Emp_ID] = s;
-  renderGrid();
-  if (s) toast('All marked as ' + s, 'info');
-}
-function updateDStats() {
-  var p = 0, a = 0, l = 0;
-  for (var i = 0; i < APP.employees.length; i++) {
-    var s = APP.attendanceMap[APP.employees[i].Emp_ID] || '';
-    if (s === 'P' || s === 'LP' || s === 'ODW' || s === 'HDW') p++;
-    else if (s === 'A') a++;
-    else if (s && s !== 'WHD' && s !== 'GHD') l++;
-  }
-  document.getElementById('sT').textContent = APP.employees.length;
-  document.getElementById('sP').textContent = p;
-  document.getElementById('sA').textContent = a;
-  document.getElementById('sL').textContent = l;
-}
-function updateSubmitSum() {
-  var m = 0, t = APP.employees.length;
-  for (var k in APP.attendanceMap) { if (APP.attendanceMap[k] !== '') m++; }
-  document.getElementById('submitSum').textContent = m === t ? 'All ' + t + ' marked' : m + ' of ' + t + ' marked';
-}
-async function submitAttendance() {
-  if (APP.isSubmitting) return;
-  var date = document.getElementById('attDate').value;
-  var records = [];
-  var unm = 0;
-  for (var i = 0; i < APP.employees.length; i++) {
-    var e = APP.employees[i];
-    var s = APP.attendanceMap[e.Emp_ID];
-    if (s) {
-      records.push({ date: date, empId: e.Emp_ID, name: e.Name, status: s, updatedBy: APP.currentUser.displayName });
-    } else { unm++; }
-  }
-  if (!records.length) { toast('Mark at least one', 'error'); return; }
-  if (unm > 0 && !confirm(unm + ' unmarked. Continue?')) return;
-  APP.isSubmitting = true;
-  var btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  document.getElementById('submitTxt').textContent = 'Saving...';
-  try {
-    var r = await fetch(APP.gasUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'saveAttendance', records: records })
-    });
-    var d = await r.json();
-    toast(d.success ? (d.message || 'Saved!') : 'Error: ' + (d.error || ''), d.success ? 'success' : 'error');
-  } catch(e) { toast('Failed: ' + e.message, 'error'); }
-  finally { APP.isSubmitting = false; btn.disabled = false; document.getElementById('submitTxt').textContent = 'Submit All'; }
-}
-
-/* ============================================================
-   MONTHLY VIEW
-   ============================================================ */
-(function buildLegend() {
-  var el = document.getElementById('mLegend');
-  var h = '';
-  for (var i = 0; i < STATUS_KEYS.length; i++) {
-    var k = STATUS_KEYS[i];
-    h += '<div class="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold" style="color:' + S[k].c + '"><span class="w-2 h-2 rounded" style="background:' + S[k].c + '"></span>' + k + '</div>';
-  }
-  el.innerHTML = h;
-})();
-async function loadMonthlyData() {
-  if (!APP.gasUrl || !APP.employees.length) return;
-  var ym = document.getElementById('monthPicker').value;
-  if (!ym) return;
-  document.getElementById('mLoading').classList.remove('hidden');
-  document.getElementById('monthlyGrid').innerHTML = '';
-  var dy = daysIn(ym);
-  var sd = ym + '-01';
-  var ed = ym + '-' + p2(dy);
-  try {
-    var r = await fetch(APP.gasUrl + '?action=attendanceRange&startDate=' + sd + '&endDate=' + ed + '&_t=' + Date.now());
-    var d = await r.json();
-    APP.monthlyData = {};
-    if (d.success && d.data) {
-      for (var i = 0; i < d.data.length; i++) {
-        var rec = d.data[i];
-        var dk;
-        if (rec.Date instanceof Date) { dk = fmtISO(rec.Date); } else { dk = rec.Date.toString().split('T')[0]; }
-        APP.monthlyData[dk + '_' + rec.Emp_ID] = rec.Status;
-      }
-    }
-    renderMonthly(ym, dy);
-    updateMStats(ym, dy);
-    renderMonthlyReport(ym, dy);
-  } catch(e) { toast('Failed', 'error'); }
-  document.getElementById('mLoading').classList.add('hidden');
-}
-function matchStatus(raw) {
-  if (!raw) return '';
-  var su = raw.toUpperCase().trim();
-  for (var i = 0; i < STATUS_KEYS.length; i++) {
-    if (su === STATUS_KEYS[i].toUpperCase()) return STATUS_KEYS[i];
-  }
-  return raw.substring(0, 2).toUpperCase();
-}
-function renderMonthly(ym, dy) {
-  var c = document.getElementById('monthlyGrid');
-  var td = fmtISO(new Date());
-  var h = '<table class="gt"><thead><tr><th>#</th><th>Name</th><th>Desig</th>';
-  for (var d = 1; d <= dy; d++) {
-    var ds = ym + '-' + p2(d);
-    var dw2 = dow(ds);
-    var cls = '';
-    if (ds === td) cls += ' day-today';
-    h += '<th class="' + cls + '">' + dn(ds) + '<br><span class="opacity-70">' + d + '</span></th>';
-  }
-  h += '</tr></thead><tbody>';
-  for (var ei = 0; ei < APP.employees.length; ei++) {
-    var emp = APP.employees[ei];
-    h += '<tr><td>' + (ei+1) + '</td><td>' + esc(emp.Name) + '</td><td>' + esc(emp.Designation || '') + '</td>';
-    for (var d2 = 1; d2 <= dy; d2++) {
-      var ds2 = ym + '-' + p2(d2);
-      var key = ds2 + '_' + emp.Emp_ID;
-      var st = APP.monthlyData[key] || '';
-      var code = matchStatus(st);
-      var isFut = ds2 > td;
-      h += '<td>';
-      if (isFut) {
-        h += '<span class="gc empty" style="opacity:.35;cursor:default">&mdash;</span>';
-      } else {
-        var cc = code && S[code] ? code : 'empty';
-        var bgStyle = cc !== 'empty' ? 'background:' + S[cc].c + ';color:#fff' : '';
-        h += '<button class="gc ' + (cc === 'empty' ? 'empty' : '') + '" style="' + bgStyle + '" onclick="openMCell(event,\'' + esc(emp.Emp_ID) + '\',\'' + esc(emp.Name) + '\',\'' + ds2 + '\')">' + (code || '&mdash;') + '</button>';
-      }
-      h += '</td>';
-    }
-    h += '</tr>';
-  }
-  h += '</tbody></table>';
-  c.innerHTML = h;
-}
-function updateMStats(ym, dy) {
-  var td = fmtISO(new Date());
-  document.getElementById('mT').textContent = APP.employees.length;
-  var filled = 0, total = 0, miss = 0;
-  for (var d = 1; d <= dy; d++) {
-    var ds = ym + '-' + p2(d);
-    if (ds > td) continue;
-    var dh = false;
-    for (var i = 0; i < APP.employees.length; i++) {
-      var k = ds + '_' + APP.employees[i].Emp_ID;
-      if (APP.monthlyData[k]) { total++; dh = true; } else { miss++; }
-    }
-    if (dh) filled++;
-  }
-  document.getElementById('mF').textContent = filled;
-  document.getElementById('mR').textContent = total;
-  document.getElementById('mM').textContent = miss;
-}
-function renderMonthlyReport(ym, dy) {
-  var el = document.getElementById('reportBody');
-  var td = fmtISO(new Date());
-  if (!APP.employees.length) { el.innerHTML = '<p class="text-xs text-gray-400">No employees.</p>'; return; }
-  // Leave codes to track
-  var leaveCodes = ['CL', 'SL', 'MCL', 'FL', 'PL', 'EL', 'UPL'];
-  var h = '<div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="border-b-2 border-primary-100">';
-  h += '<th class="py-2 px-2 text-left text-[10px] font-bold text-gray-500 uppercase sticky left-0 bg-white z-10 min-w-[140px]">Employee</th>';
-  h += '<th class="py-2 px-2 text-center text-[10px] font-bold text-gray-500 uppercase">P</th>';
-  h += '<th class="py-2 px-2 text-center text-[10px] font-bold text-gray-500 uppercase">LP</th>';
-  h += '<th class="py-2 px-2 text-center text-[10px] font-bold text-gray-500 uppercase">A</th>';
-  for (var li = 0; li < leaveCodes.length; li++) {
-    h += '<th class="py-2 px-2 text-center text-[10px] font-bold uppercase" style="color:' + S[leaveCodes[li]].c + '">' + leaveCodes[li] + '</th>';
-  }
-  h += '<th class="py-2 px-2 text-center text-[10px] font-bold text-gray-500 uppercase">WHD</th>';
-  h += '<th class="py-2 px-2 text-center text-[10px] font-bold text-gray-500 uppercase">GHD</th>';
-  h += '<th class="py-2 px-2 text-center text-[10px] font-bold text-gray-500 uppercase">Total</th>';
-  h += '<th class="py-2 px-2 text-center text-[10px] font-bold text-gray-500 uppercase">Leave Used</th>';
-  h += '</tr></thead><tbody>';
-  for (var ei = 0; ei < APP.employees.length; ei++) {
-    var emp = APP.employees[ei];
-    var counts = {};
-    for (var ci = 0; ci < STATUS_KEYS.length; ci++) counts[STATUS_KEYS[ci]] = 0;
-    var totalDays = 0;
-    for (var d = 1; d <= dy; d++) {
-      var ds = ym + '-' + p2(d);
-      if (ds > td) continue;
-      totalDays++;
-      var key = ds + '_' + emp.Emp_ID;
-      var st = matchStatus(APP.monthlyData[key] || '');
-      if (st && counts[st] !== undefined) counts[st]++;
-    }
-    var totalMarked = 0;
-    for (var ck in counts) totalMarked += counts[ck];
-    var leaveUsed = 0;
-    for (var lk = 0; lk < leaveCodes.length; lk++) leaveUsed += counts[leaveCodes[lk]];
-    h += '<tr class="border-b border-gray-50 hover:bg-gray-50">';
-    h += '<td class="py-2 px-2 sticky left-0 bg-white z-10"><div class="flex items-center gap-1.5">' + avHtml(emp, 24) + '<span class="font-medium text-gray-800 truncate max-w-[100px]">' + esc(emp.Name) + '</span></div></td>';
-    h += '<td class="py-2 px-2 text-center font-bold" style="color:#2563eb">' + counts['P'] + '</td>';
-    h += '<td class="py-2 px-2 text-center font-bold" style="color:#7c3aed">' + counts['LP'] + '</td>';
-    h += '<td class="py-2 px-2 text-center font-bold" style="color:#dc2626">' + counts['A'] + '</td>';
-    for (var li2 = 0; li2 < leaveCodes.length; li2++) {
-      var lv = counts[leaveCodes[li2]];
-      h += '<td class="py-2 px-2 text-center font-semibold" style="color:' + S[leaveCodes[li2]].c + '">' + lv + '</td>';
-    }
-    h += '<td class="py-2 px-2 text-center font-semibold text-gray-500">' + counts['WHD'] + '</td>';
-    h += '<td class="py-2 px-2 text-center font-semibold text-gray-500">' + counts['GHD'] + '</td>';
-    h += '<td class="py-2 px-2 text-center font-bold text-gray-800">' + totalMarked + '</td>';
-    h += '<td class="py-2 px-2 text-center font-bold" style="color:' + (leaveUsed > 0 ? '#ea580c' : '#d1d5db') + '">' + leaveUsed + '</td>';
-    h += '</tr>';
-  }
-  // Grand total row
-  h += '<tr class="border-t-2 border-gray-200 bg-gray-50 font-bold">';
-  h += '<td class="py-2 px-2 sticky left-0 bg-gray-50 z-10 text-gray-700">TOTAL</td>';
-  var grandTotals = {};
-  for (var gt = 0; gt < STATUS_KEYS.length; gt++) grandTotals[STATUS_KEYS[gt]] = 0;
-  var grandLeaveUsed = 0;
-  for (var gei = 0; gei < APP.employees.length; gei++) {
-    for (var gd = 1; gd <= dy; gd++) {
-      var gds = ym + '-' + p2(gd);
-      if (gds > td) continue;
-      var gk = gds + '_' + APP.employees[gei].Emp_ID;
-      var gst = matchStatus(APP.monthlyData[gk] || '');
-      if (gst && grandTotals[gst] !== undefined) grandTotals[gst]++;
-    }
-  }
-  h += '<td class="py-2 px-2 text-center" style="color:#2563eb">' + grandTotals['P'] + '</td>';
-  h += '<td class="py-2 px-2 text-center" style="color:#7c3aed">' + grandTotals['LP'] + '</td>';
-  h += '<td class="py-2 px-2 text-center" style="color:#dc2626">' + grandTotals['A'] + '</td>';
-  for (var li3 = 0; li3 < leaveCodes.length; li3++) {
-    grandLeaveUsed += grandTotals[leaveCodes[li3]];
-    h += '<td class="py-2 px-2 text-center" style="color:' + S[leaveCodes[li3]].c + '">' + grandTotals[leaveCodes[li3]] + '</td>';
-  }
-  h += '<td class="py-2 px-2 text-center text-gray-500">' + grandTotals['WHD'] + '</td>';
-  h += '<td class="py-2 px-2 text-center text-gray-500">' + grandTotals['GHD'] + '</td>';
-  var grandTotal = 0;
-  for (var gk2 in grandTotals) grandTotal += grandTotals[gk2];
-  h += '<td class="py-2 px-2 text-center text-gray-800">' + grandTotal + '</td>';
-  h += '<td class="py-2 px-2 text-center" style="color:#ea580c">' + grandLeaveUsed + '</td>';
-  h += '</tr></tbody></table></div>';
-  el.innerHTML = h;
-}
-function toggleFullReport() {
-  var modal = document.getElementById('profileModal');
-  var content = document.getElementById('profileContent');
-  // Copy the report table into the profile modal for full-screen view
-  var reportHtml = document.getElementById('reportBody').innerHTML;
-  content.innerHTML = '<h3 class="text-base font-bold mb-4"><i class="fa-solid fa-chart-pie mr-2 text-primary-500"></i>Monthly Leave Report — ' + esc(document.getElementById('monthPicker').value || '') + '</h3>' + reportHtml;
-  modal.classList.add('open');
-}
-function openMCell(event, empId, empName, dateStr) {
-  closeDD();
-  var dd = document.getElementById('dd');
-  var cur = '';
-  var key = dateStr + '_' + empId;
-  if (APP.monthlyData[key]) cur = matchStatus(APP.monthlyData[key]);
-  var h = '';
-  for (var i = 0; i < STATUS_KEYS.length; i++) {
-    var code = STATUS_KEYS[i];
-    var act = code === cur;
-    h += '<button onclick="selectMStatus(\'' + code + '\',\'' + empId + '\',\'' + esc(empName) + '\',\'' + dateStr + '\')"' + (act ? ' style="background:#f0fdf4"' : '') + '>';
-    h += '<span class="dd-dot" style="background:' + S[code].c + '"></span>' + code + ' &mdash; ' + S[code].l;
-    if (act) h += ' <i class="fa-solid fa-check text-primary-500 ml-auto"></i>';
-    h += '</button>';
-  }
-  h += '<hr class="my-1 border-gray-100"><button onclick="selectMStatus(\'\',\'' + empId + '\',\'' + esc(empName) + '\',\'' + dateStr + '\')"><span class="dd-dot" style="background:#d1d5db"></span>Clear</button>';
-  dd.innerHTML = h;
-  var r = event.target.closest('.gc').getBoundingClientRect();
-  dd.style.top = Math.min(r.bottom + 3, window.innerHeight - 400) + 'px';
-  dd.style.left = Math.min(r.left, window.innerWidth - 180) + 'px';
-  dd.classList.remove('hidden');
-}
-async function selectMStatus(code, empId, empName, dateStr) {
-  var key = dateStr + '_' + empId;
-  if (code) {
-    APP.monthlyData[key] = code;
-    closeDD();
-    try {
-      await fetch(APP.gasUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'updateAttendance', record: { date: dateStr, empId: empId, name: empName, status: code, updatedBy: APP.currentUser.displayName } })
-      });
-    } catch(e) { toast('Save failed', 'error'); }
-  } else {
-    delete APP.monthlyData[key];
-    closeDD();
-  }
-  var ym = dateStr.substring(0, 7);
-  renderMonthly(ym, daysIn(ym));
-  updateMStats(ym, daysIn(ym));
-}
-
-/* ============================================================
-   EMPLOYEE MANAGEMENT
-   ============================================================ */
-function populateDeptFilter() {
-  var sel = document.getElementById('empDeptFilter');
-  var val = sel.value;
-  var depts = {};
-  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
-  for (var i = 0; i < source.length; i++) {
-    if (source[i].Department) depts[source[i].Department] = 1;
-  }
-  var opts = '<option value="">All Departments</option>';
-  var keys = Object.keys(depts).sort();
-  for (var j = 0; j < keys.length; j++) {
-    opts += '<option' + (keys[j] === val ? ' selected' : '') + '>' + esc(keys[j]) + '</option>';
-  }
-  sel.innerHTML = opts;
-}
-function openAddEmployee() {
-  switchTab('employees');
-  var f = document.getElementById('addForm');
-  if (f.classList.contains('hidden')) f.classList.remove('hidden');
-  document.getElementById('nId').focus();
-}
-function clearAddForm() {
-  var ids = ['nId','nName','nDesig','nDept','nDate','nPhone','nEmail','nEmerg','nPhoto'];
-  for (var i = 0; i < ids.length; i++) document.getElementById(ids[i]).value = '';
-  document.getElementById('nCat').selectedIndex = 0;
-  document.getElementById('nShift').selectedIndex = 0;
-  document.getElementById('nCL').value = '12';
-  document.getElementById('nSL').value = '10';
-  document.getElementById('nEL').value = '15';
-  document.getElementById('nPL').value = '7';
-  document.getElementById('nPhotoPreview').classList.add('hidden');
-}
-async function addEmployee() {
-  var empId = document.getElementById('nId').value.trim();
-  var name = document.getElementById('nName').value.trim();
-  if (!empId || !name) { toast('ID and Name required', 'error'); return; }
-  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
-  for (var i = 0; i < source.length; i++) {
-    if (source[i].Emp_ID === empId) { toast('ID "' + empId + '" exists!', 'error'); return; }
-  }
-  var btn = document.getElementById('addBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px"></span> Adding...';
-  try {
-    var r = await fetch(APP.gasUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'addEmployee',
-        employee: {
-          empId: empId, name: name,
-          designation: document.getElementById('nDesig').value.trim(),
-          department: document.getElementById('nDept').value.trim(),
-          joiningDate: document.getElementById('nDate').value,
-          imageUrl: document.getElementById('nPhoto').value.trim(),
-          phone: document.getElementById('nPhone').value.trim(),
-          email: document.getElementById('nEmail').value.trim(),
-          category: document.getElementById('nCat').value,
-          shift: document.getElementById('nShift').value,
-          emergencyContact: document.getElementById('nEmerg').value.trim(),
-          clBalance: document.getElementById('nCL').value,
-          slBalance: document.getElementById('nSL').value,
-          elBalance: document.getElementById('nEL').value,
-          plBalance: document.getElementById('nPL').value,
-          status: 'Active', updatedBy: APP.currentUser.displayName
-        }
-      })
-    });
-    var d = await r.json();
-    if (d.success) { toast(name + ' added!', 'success'); clearAddForm(); fetchEmployees(); loadDash(); }
-    else toast(d.error || 'Failed', 'error');
-  } catch(e) { toast(e.message, 'error'); }
-  finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-plus"></i>Add Employee'; }
-}
-
-/* Edit Employee */
-function openEdit(empId) {
-  var emp = null;
-  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
-  for (var i = 0; i < source.length; i++) {
-    if (source[i].Emp_ID === empId) { emp = source[i]; break; }
-  }
-  if (!emp) return;
-  document.getElementById('eId').value = emp.Emp_ID;
-  document.getElementById('eIdR').value = emp.Emp_ID;
-  document.getElementById('eName').value = emp.Name || '';
-  document.getElementById('eDesig').value = emp.Designation || '';
-  document.getElementById('eDept').value = emp.Department || '';
-  document.getElementById('eDate').value = emp.Joining_Date instanceof Date ? fmtISO(emp.Joining_Date) : (emp.Joining_Date || '');
-  document.getElementById('ePhone').value = emp.Phone || '';
-  document.getElementById('eEmail').value = emp.Email || '';
-  document.getElementById('eEmerg').value = emp.Emergency_Contact || '';
-  document.getElementById('eCat').value = emp.Category || '';
-  document.getElementById('eShift').value = emp.Shift || '';
-  document.getElementById('ePhoto').value = emp.Image_URL || '';
-  document.getElementById('eEmerg').value = emp.Emergency_Contact || '';
-  document.getElementById('eCL').value = emp.CL_Balance || 0;
-  document.getElementById('eSL').value = emp.SL_Balance || 0;
-  document.getElementById('eEL').value = emp.EL_Balance || 0;
-  document.getElementById('ePL').value = emp.PL_Balance || 0;
-  previewEditPhoto();
-  document.getElementById('editModal').classList.add('open');
-}
-function closeEdit() { document.getElementById('editModal').classList.remove('open'); }
-async function saveEdit() {
-  var name = document.getElementById('eName').value.trim();
-  if (!name) { toast('Name required', 'error'); return; }
-  try {
-    var r = await fetch(APP.gasUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'editEmployee',
-        employee: {
-          empId: document.getElementById('eId').value, name: name,
-          designation: document.getElementById('eDesig').value.trim(),
-          department: document.getElementById('eDept').value.trim(),
-          joiningDate: document.getElementById('eDate').value,
-          imageUrl: document.getElementById('ePhoto').value.trim(),
-          phone: document.getElementById('ePhone').value.trim(),
-          email: document.getElementById('eEmail').value.trim(),
-          category: document.getElementById('eCat').value,
-          shift: document.getElementById('eShift').value,
-          emergencyContact: document.getElementById('eEmerg').value.trim(),
-          clBalance: document.getElementById('eCL').value,
-          slBalance: document.getElementById('eSL').value,
-          elBalance: document.getElementById('eEL').value,
-          plBalance: document.getElementById('ePL').value,
-          updatedBy: APP.currentUser.displayName
-        }
-      })
-    });
-    var d = await r.json();
-    if (d.success) { toast('Updated!', 'success'); closeEdit(); fetchEmployees(); loadDash(); renderEmpList(); }
-    else toast(d.error || 'Failed', 'error');
-  } catch(e) { toast(e.message, 'error'); }
-}
-
-/* Toggle Status */
-async function toggleStatus(empId) {
-  try {
-    var r = await fetch(APP.gasUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'toggleEmployeeStatus', empId: empId, updatedBy: APP.currentUser.displayName })
-    });
-    var d = await r.json();
-    if (d.success) { toast('Status: ' + d.newStatus, 'success'); fetchEmployees(); renderEmpList(); loadDash(); }
-    else toast(d.error || 'Failed', 'error');
-  } catch(e) { toast(e.message, 'error'); }
-}
-
-/* Delete Employee */
-async function deleteEmp(empId, name) {
-  if (!confirm('Delete "' + name + '" (' + empId + ')?')) return;
-  try {
-    var r = await fetch(APP.gasUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'deleteEmployee', empId: empId, updatedBy: APP.currentUser.displayName })
-    });
-    var d = await r.json();
-    if (d.success) { toast('Deleted', 'success'); fetchEmployees(); loadDash(); renderEmpList(); }
-    else toast(d.error || 'Failed', 'error');
-  } catch(e) { toast(e.message, 'error'); }
-}
-
-/* Profile */
-async function openProfile(empId) {
-  var modal = document.getElementById('profileModal');
-  var content = document.getElementById('profileContent');
-  content.innerHTML = '<div class="text-center py-8"><div class="spinner spinner-d mx-auto mb-3" style="width:28px;height:28px"></div><p class="text-xs text-gray-400">Loading profile...</p></div>';
-  modal.classList.add('open');
-  try {
-    var r = await fetch(APP.gasUrl + '?action=employeeProfile&empId=' + empId + '&_t=' + Date.now());
-    var d = await r.json();
-    if (d.success) renderProfile(d.data);
-    else content.innerHTML = '<p class="text-sm text-red-500">' + (d.error || 'Not found') + '</p>';
-  } catch(e) { content.innerHTML = '<p class="text-sm text-red-500">' + e.message + '</p>'; }
-}
-function renderProfile(data) {
-  var e = data.employee, sum = data.summary;
-  var c = document.getElementById('profileContent');
-  var h = '<div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100">' + avHtml(e, 72) + '<div>';
-  h += '<h3 class="text-lg font-bold text-gray-800">' + esc(e.Name) + '</h3>';
-  h += '<p class="text-xs text-gray-400">' + esc(e.Emp_ID) + ' &middot; ' + esc(e.Designation || '-') + '</p>';
-  if (e.Department) h += '<span class="badge bg-primary-50 text-primary-600 mt-1">' + esc(e.Department) + '</span>';
-  h += '</div></div>';
-  h += '<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">';
-  var info = [['Phone', e.Phone, 'fa-phone'], ['Email', e.Email, 'fa-envelope'], ['Joining', e.Joining_Date, 'fa-calendar'], ['Category', e.Category, 'fa-briefcase'], ['Shift', e.Shift, 'fa-clock'], ['Emergency', e.Emergency_Contact, 'fa-phone-volume']];
-  for (var i = 0; i < info.length; i++) {
-    h += '<div class="p-2.5 rounded-lg bg-gray-50"><p class="text-[10px] text-gray-400"><i class="fa-solid ' + info[i][2] + ' mr-1"></i>' + info[i][0] + '</p><p class="text-xs font-semibold text-gray-700 truncate">' + esc(info[i][1] || '-') + '</p></div>';
-  }
-  h += '</div>';
-  h += '<h4 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-umbrella-beach mr-2 text-teal-500"></i>Leave Balance</h4>';
-  h += '<div class="grid grid-cols-4 gap-2 mb-5">';
-  var lb = [['CL', e.CL_Balance || 0, '#16a34a'], ['SL', e.SL_Balance || 0, '#6b7280'], ['EL', e.EL_Balance || 0, '#4f46e5'], ['PL', e.PL_Balance || 0, '#0891b2']];
-  for (var li = 0; li < lb.length; li++) {
-    var lbv = Number(lb[li][1]);
-    var lbc = lbv <= 2 ? '#dc2626' : lbv <= 5 ? '#f59e0b' : lb[li][2];
-    h += '<div class="p-2.5 rounded-lg bg-gray-50 text-center"><p class="text-[10px] text-gray-400 font-semibold">' + lb[li][0] + '</p><p class="text-lg font-bold" style="color:' + lbc + '">' + lbv + '</p><p class="text-[9px] text-gray-400">days</p></div>';
-  }
-  h += '</div>';
-  h += '<h4 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-chart-bar mr-2 text-blue-500"></i>Attendance Summary</h4>';
-  var total = 0;
-  for (var k in sum) total += sum[k];
-  if (total === 0) {
-    h += '<p class="text-xs text-gray-400">No attendance records found.</p>';
-  } else {
-    h += '<p class="text-[10px] text-gray-400 mb-2">Total records: ' + total + '</p>';
-    var mx = 0;
-    for (var k2 in sum) { if (sum[k2] > mx) mx = sum[k2]; }
-    for (var j = 0; j < STATUS_KEYS.length; j++) {
-      var code = STATUS_KEYS[j];
-      if (!sum[code]) continue;
-      var pct = Math.round(sum[code] / total * 100);
-      var w = Math.max(Math.round(sum[code] / mx * 100), 5);
-      h += '<div class="flex items-center gap-2 mb-1.5"><span class="text-[11px] font-semibold w-8" style="color:' + S[code].c + '">' + code + '</span>';
-      h += '<div class="flex-1 h-4 bg-gray-100 rounded overflow-hidden"><div class="h-full rounded" style="width:' + w + '%;background:' + S[code].c + '"></div></div>';
-      h += '<span class="text-[10px] font-bold text-gray-600 w-16 text-right">' + sum[code] + ' (' + pct + '%)</span></div>';
-    }
-  }
-  c.innerHTML = h;
-}
-function closeProfile() { document.getElementById('profileModal').classList.remove('open'); }
-
-/* Employee List */
-function getFilteredEmps() {
-  var s = (document.getElementById('empSearch').value || '').toLowerCase();
-  var dept = document.getElementById('empDeptFilter').value;
-  var stat = document.getElementById('empStatusFilter').value;
-  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
-  var result = [];
-  for (var i = 0; i < source.length; i++) {
-    var e = source[i];
-    if (s && e.Name.toLowerCase().indexOf(s) < 0 && e.Emp_ID.toLowerCase().indexOf(s) < 0 && (e.Department || '').toLowerCase().indexOf(s) < 0) continue;
-    if (dept && e.Department !== dept) continue;
-    if (stat === 'Active' && e.Status && e.Status.toLowerCase() !== 'active') continue;
-    if (stat === 'Inactive' && (!e.Status || e.Status.toLowerCase() !== 'inactive')) continue;
-    result.push(e);
-  }
-  return result;
-}
-function renderEmpList() {
-  var filtered = getFilteredEmps();
-  var total = filtered.length;
-  var pp = APP.empPerPage;
-  var pages = Math.ceil(total / pp) || 1;
-  if (APP.empPage > pages) APP.empPage = pages;
-  var start = (APP.empPage - 1) * pp;
-  var end = Math.min(start + pp, total);
-  var pageItems = filtered.slice(start, end);
-  var body = document.getElementById('empListBody');
-  var empty = document.getElementById('empListEmpty');
-  if (!pageItems.length) { body.innerHTML = ''; empty.classList.remove('hidden'); }
-  else {
-    empty.classList.add('hidden');
-    var h = '';
-    for (var i = 0; i < pageItems.length; i++) {
-      var emp = pageItems[i];
-      var chk = APP.selectedEmps[emp.Emp_ID] ? 'checked' : '';
-      var stBadge = (!emp.Status || emp.Status.toLowerCase() === 'active')
-        ? '<span class="badge bg-green-50 text-green-600">Active</span>'
-        : '<span class="badge bg-red-50 text-red-500">Inactive</span>';
-      h += '<tr class="el-row border-b border-gray-50">';
-      h += '<td class="py-2 px-2"><input type="checkbox" ' + chk + ' onchange="toggleSelect(\'' + esc(emp.Emp_ID) + '\',this.checked)" class="rounded"/></td>';
-      h += '<td class="py-2 px-2 text-xs text-gray-400 font-mono">' + (start + i + 1) + '</td>';
-      h += '<td class="py-2 px-2"><div class="flex items-center gap-2">' + avHtml(emp, 32) + '<div><p class="text-xs font-semibold text-gray-800 truncate">' + esc(emp.Name) + '</p><p class="text-[10px] text-gray-400 font-mono">' + esc(emp.Emp_ID) + '</p></div></div></td>';
-      h += '<td class="py-2 px-2 text-xs text-gray-600 hidden sm:table-cell">' + esc(emp.Designation || '-') + '</td>';
-      h += '<td class="py-2 px-2 hidden md:table-cell">' + (emp.Department ? '<span class="badge bg-primary-50 text-primary-600">' + esc(emp.Department) + '</span>' : '-') + '</td>';
-      h += '<td class="py-2 px-2 hidden lg:table-cell text-xs text-gray-500">' + esc(emp.Category || '-') + '</td>';
-      h += '<td class="py-2 px-2 hidden lg:table-cell text-xs text-gray-500">' + esc(emp.Shift || '-') + '</td>';
-      h += '<td class="py-2 px-2 text-center">' + stBadge + '</td>';
-      h += '<td class="py-2 px-2 text-center no-print"><div class="flex items-center justify-center gap-1">';
-      h += '<button onclick="openProfile(\'' + esc(emp.Emp_ID) + '\')" class="w-7 h-7 rounded-lg hover:bg-blue-50 inline-flex items-center justify-center text-gray-400 hover:text-blue-500" title="Profile"><i class="fa-solid fa-eye text-[10px]"></i></button>';
-      h += '<button onclick="openEdit(\'' + esc(emp.Emp_ID) + '\')" class="w-7 h-7 rounded-lg hover:bg-amber-50 inline-flex items-center justify-center text-gray-400 hover:text-amber-500" title="Edit"><i class="fa-solid fa-pen text-[10px]"></i></button>';
-      h += '<button onclick="toggleStatus(\'' + esc(emp.Emp_ID) + '\')" class="w-7 h-7 rounded-lg hover:bg-green-50 inline-flex items-center justify-center text-gray-400 hover:text-green-500" title="Toggle Status"><i class="fa-solid fa-toggle-on text-[10px]"></i></button>';
-      h += '<button onclick="deleteEmp(\'' + esc(emp.Emp_ID) + '\',\'' + esc(emp.Name).replace(/'/g, "\\'") + '\')" class="w-7 h-7 rounded-lg hover:bg-red-50 inline-flex items-center justify-center text-gray-400 hover:text-red-500" title="Delete"><i class="fa-solid fa-trash text-[10px]"></i></button>';
-      h += '</div></td></tr>';
-    }
-    body.innerHTML = h;
-  }
-  /* Pagination */
-  var pgEl = document.getElementById('empPagination');
-  if (total <= pp) { pgEl.innerHTML = ''; }
-  else {
-    var ph = '<span class="text-xs text-gray-400">Page ' + APP.empPage + ' of ' + pages + ' (' + total + ' total)</span><div class="flex gap-1">';
-    ph += '<button onclick="APP.empPage=Math.max(1,APP.empPage-1);renderEmpList()" class="px-2.5 py-1 rounded-lg bg-gray-100 text-xs font-semibold text-gray-600" ' + (APP.empPage <= 1 ? 'disabled' : '') + '><i class="fa-solid fa-chevron-left"></i></button>';
-    for (var p = Math.max(1, APP.empPage - 2); p <= Math.min(pages, APP.empPage + 2); p++) {
-      ph += '<button onclick="APP.empPage=' + p + ';renderEmpList()" class="px-2.5 py-1 rounded-lg text-xs font-semibold ' + (p === APP.empPage ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600') + '">' + p + '</button>';
-    }
-    ph += '<button onclick="APP.empPage=Math.min(' + pages + ',APP.empPage+1);renderEmpList()" class="px-2.5 py-1 rounded-lg bg-gray-100 text-xs font-semibold text-gray-600" ' + (APP.empPage >= pages ? 'disabled' : '') + '><i class="fa-solid fa-chevron-right"></i></button></div>';
-    pgEl.innerHTML = ph;
-  }
-  /* Bulk bar */
-  var selCount = Object.keys(APP.selectedEmps).length;
-  var bb = document.getElementById('bulkBar');
-  if (selCount > 0) { bb.classList.remove('hidden'); document.getElementById('bulkCount').textContent = selCount + ' selected'; }
-  else { bb.classList.add('hidden'); }
-}
-function toggleSelect(empId, checked) {
-  if (checked) APP.selectedEmps[empId] = true;
-  else delete APP.selectedEmps[empId];
-  renderEmpList();
-}
-function toggleSelectAll(checked) {
-  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
-  for (var i = 0; i < source.length; i++) APP.selectedEmps[source[i].Emp_ID] = checked;
-  renderEmpList();
-}
-function clearSelection() { APP.selectedEmps = {}; document.getElementById('empSelectAll').checked = false; renderEmpList(); }
-async function bulkDelete() {
-  var ids = Object.keys(APP.selectedEmps);
-  if (!ids.length || !confirm('Delete ' + ids.length + ' employees?')) return;
-  for (var i = 0; i < ids.length; i++) {
-    try {
-      await fetch(APP.gasUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'deleteEmployee', empId: ids[i], updatedBy: APP.currentUser.displayName })
-      });
-    } catch(e) {}
-  }
-  APP.selectedEmps = {};
-  document.getElementById('empSelectAll').checked = false;
-  toast(ids.length + ' deleted', 'success');
-  fetchEmployees(); loadDash(); renderEmpList();
-}
-
-/* ============================================================
-   CSV IMPORT / EXPORT
-   ============================================================ */
-function openCSVImport() {
-  document.getElementById('csvModal').classList.add('open');
-  document.getElementById('csvFile').value = '';
-  document.getElementById('csvPreview').innerHTML = '';
-  document.getElementById('csvCount').textContent = '';
-  document.getElementById('csvImportBtn').disabled = true;
-  APP.csvParsed = [];
-}
-function closeCSV() { document.getElementById('csvModal').classList.remove('open'); }
-function parseCSV() {
-  var file = document.getElementById('csvFile').files[0];
-  if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(ev) {
-    var lines = ev.target.result.split('\n').filter(function(l) { return l.trim(); });
-    APP.csvParsed = [];
-    for (var i = 1; i < lines.length; i++) {
-      var cols = lines[i].split(',').map(function(c) { return c.trim(); });
-      if (cols.length >= 2 && cols[0]) {
-        APP.csvParsed.push({ empId: cols[0], name: cols[1], designation: cols[2]||'', department: cols[3]||'', joiningDate: cols[4]||'', phone: cols[5]||'', email: cols[6]||'', category: cols[7]||'', shift: cols[8]||'' });
-      }
-    }
-    document.getElementById('csvCount').textContent = '(' + APP.csvParsed.length + ')';
-    document.getElementById('csvImportBtn').disabled = !APP.csvParsed.length;
-    if (!APP.csvParsed.length) { document.getElementById('csvPreview').innerHTML = '<p class="text-xs text-gray-400 p-3">No valid rows found.</p>'; return; }
-    var h = '<table class="w-full text-xs"><thead><tr class="bg-gray-50"><th class="py-1.5 px-2 text-left">ID</th><th class="py-1.5 px-2 text-left">Name</th><th class="py-1.5 px-2 text-left">Dept</th><th class="py-1.5 px-2 text-left">Category</th><th class="py-1.5 px-2 text-left">Shift</th></tr></thead><tbody>';
-    for (var j = 0; j < APP.csvParsed.length; j++) {
-      var r = APP.csvParsed[j];
-      h += '<tr class="border-b border-gray-50"><td class="py-1 px-2">' + esc(r.empId) + '</td><td class="py-1 px-2 font-semibold">' + esc(r.name) + '</td><td class="py-1 px-2 text-gray-500">' + esc(r.department) + '</td><td class="py-1 px-2 text-gray-500">' + esc(r.category) + '</td><td class="py-1 px-2 text-gray-500">' + esc(r.shift) + '</td></tr>';
-    }
-    h += '</tbody></table>';
-    document.getElementById('csvPreview').innerHTML = h;
-  };
-  reader.readAsText(file);
-}
-async function importCSV() {
-  if (!APP.csvParsed.length) return;
-  var btn = document.getElementById('csvImportBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;color:#fff"></span> Importing...';
-  try {
-    var r = await fetch(APP.gasUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'bulkImportEmployees', employees: APP.csvParsed, updatedBy: APP.currentUser.displayName })
-    });
-    var d = await r.json();
-    if (d.success) { toast('Imported ' + APP.csvParsed.length + ' employees!', 'success'); closeCSV(); fetchEmployees(); loadDash(); renderEmpList(); }
-    else toast(d.error || 'Failed', 'error');
-  } catch(e) { toast(e.message, 'error'); }
-  finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-upload mr-1"></i>Import (' + APP.csvParsed.length + ')'; }
-}
-function exportCSV() {
-  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
-  var rows = [['Emp_ID','Name','Designation','Department','Joining_Date','Phone','Email','Category','Shift','Status','CL_Balance','SL_Balance','EL_Balance','PL_Balance']];
-  for (var i = 0; i < source.length; i++) {
-    var e = source[i];
-    rows.push([e.Emp_ID, e.Name, e.Designation||'', e.Department||'', e.Joining_Date||'', e.Phone||'', e.Email||'', e.Category||'', e.Shift||'', e.Status||'Active', e.CL_Balance||0, e.SL_Balance||0, e.EL_Balance||0, e.PL_Balance||0]);
-  }
-  var csv = rows.map(function(r) { return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
-  var blob = new Blob([csv], { type: 'text/csv' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'employees_' + fmtISO(new Date()) + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('CSV exported!', 'success');
-}
-
-/* ============================================================
-   ID CARD PRINT
-   ============================================================ */
-function openIDCardPrint(emps) {
-  var list = emps || APP.employees;
-  if (!list.length) { toast('No employees', 'error'); return; }
-  var h = '<div class="grid grid-cols-2 gap-4">';
-  for (var i = 0; i < list.length; i++) {
-    var emp = list[i];
-    h += '<div class="border-2 border-gray-200 rounded-xl p-5 text-center" style="break-inside:avoid">';
-    h += '<div class="flex justify-center mb-3">' + avHtml(emp, 72) + '</div>';
-    h += '<h3 class="text-sm font-bold text-gray-800">' + esc(emp.Name) + '</h3>';
-    h += '<p class="text-[10px] text-gray-400 font-mono mb-2">' + esc(emp.Emp_ID) + '</p>';
-    h += '<p class="text-[11px] font-medium text-gray-600">' + esc(emp.Designation || '') + '</p>';
-    if (emp.Department) h += '<p class="text-[10px] text-primary-600 font-medium">' + esc(emp.Department) + '</p>';
-    h += '<div class="mt-3 pt-3 border-t border-gray-100"><p class="text-[9px] text-gray-400">AttendEase</p></div></div>';
-  }
-  h += '</div>';
-  document.getElementById('idCardContent').innerHTML = h;
-  document.getElementById('idCardModal').classList.add('open');
-}
-function closeIDCard() { document.getElementById('idCardModal').classList.remove('open'); }
-function bulkPrintIDs() {
-  var ids = Object.keys(APP.selectedEmps);
-  var source = APP.allEmployees.length ? APP.allEmployees : APP.employees;
-  var emps = ids.length ? source.filter(function(e) { return APP.selectedEmps[e.Emp_ID]; }) : source;
-  openIDCardPrint(emps);
-}
-
-/* ============================================================
-   ACTIVITY LOG
-   ============================================================ */
-async function loadActivityLog() {
-  var el = document.getElementById('actLogBody');
-  document.getElementById('actLoading').classList.remove('hidden');
-  el.innerHTML = '';
-  try {
-    var r = await fetch(APP.gasUrl + '?action=activityLog&_t=' + Date.now());
-    var d = await r.json();
-    if (d.success && d.data && d.data.length) {
-      var h = '<table class="w-full text-xs"><thead><tr class="border-b-2 border-gray-100">';
-      h += '<th class="py-2 px-2 text-left text-[10px] font-bold text-gray-500 uppercase">Time</th>';
-      h += '<th class="py-2 px-2 text-left text-[10px] font-bold text-gray-500 uppercase">Action</th>';
-      h += '<th class="py-2 px-2 text-left text-[10px] font-bold text-gray-500 uppercase">Employee</th>';
-      h += '<th class="py-2 px-2 text-left text-[10px] font-bold text-gray-500 uppercase">Details</th>';
-      h += '<th class="py-2 px-2 text-left text-[10px] font-bold text-gray-500 uppercase">By</th>';
-      h += '</tr></thead><tbody>';
-      for (var i = 0; i < d.data.length; i++) {
-        var log = d.data[i];
-        var ts = log.Timestamp instanceof Date ? log.Timestamp.toLocaleString() : String(log.Timestamp);
-        var ac = log.Action || '';
-        var acColor = ac === 'ADD' ? 'bg-green-50 text-green-600' : ac === 'EDIT' ? 'bg-blue-50 text-blue-600' : ac === 'DELETE' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600';
-        h += '<tr class="border-b border-gray-50">';
-        h += '<td class="py-2 px-2 text-gray-500 whitespace-nowrap">' + ts + '</td>';
-        h += '<td class="py-2 px-2"><span class="badge ' + acColor + '">' + esc(ac) + '</span></td>';
-        h += '<td class="py-2 px-2 font-medium">' + esc(log.Emp_Name || log.Emp_ID || '-') + '</td>';
-        h += '<td class="py-2 px-2 text-gray-500">' + esc(log.Details || '') + '</td>';
-        h += '<td class="py-2 px-2 text-gray-400">' + esc(log.Updated_By || '') + '</td>';
-        h += '</tr>';
-      }
-      h += '</tbody></table>';
-      el.innerHTML = h;
-    } else {
-      el.innerHTML = '<p class="text-xs text-gray-400 text-center py-6">No activity recorded yet.</p>';
-    }
-  } catch(e) { el.innerHTML = '<p class="text-xs text-red-500">' + e.message + '</p>'; }
-  document.getElementById('actLoading').classList.add('hidden');
-}
-
-function exportMonthlyCSV() {
-  var ym = document.getElementById('monthPicker').value;
-  if (!ym) { toast('Select a month', 'error'); return; }
-  var dy = daysIn(ym);
-  var td = fmtISO(new Date());
-  // Build header: Emp_ID, Name, then dates
-  var header = ['Emp_ID', 'Name', 'Designation', 'Department'];
-  for (var d = 1; d <= dy; d++) header.push(ym + '-' + p2(d));
-  // Build rows per employee
-  var rows = [header];
-  for (var ei = 0; ei < APP.employees.length; ei++) {
-    var emp = APP.employees[ei];
-    var row = [emp.Emp_ID, emp.Name, emp.Designation || '', emp.Department || ''];
-    for (var d2 = 1; d2 <= dy; d2++) {
-      var ds = ym + '-' + p2(d2);
-      var key = ds + '_' + emp.Emp_ID;
-      row.push(APP.monthlyData[key] || '');
-    }
-    rows.push(row);
-  }
-  var csv = rows.map(function(r) { return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
-  var blob = new Blob([csv], { type: 'text/csv' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'attendance_' + ym + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('Monthly report exported!', 'success');
-}
-
-/* ============================================================
-   DROPDOWN CLOSE
-   ============================================================ */
-function closeDD() { document.getElementById('dd').classList.add('hidden'); }
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.dd-menu') && !e.target.closest('.att-btn') && !e.target.closest('.gc')) closeDD();
-});
-</script>
-</body>
-</html>
