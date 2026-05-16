@@ -621,6 +621,7 @@ function apiCall(action, params, method) {
       var cbName = 'aeCb'+Date.now()+Math.random().toString(36).substr(2,4);
       var sep = url.indexOf('?') > -1 ? '&' : '?';
       var p = params || {};
+      p.action = action;
       p.callback = cbName;
       var qs = Object.keys(p).map(function(k){ return encodeURIComponent(k)+'='+encodeURIComponent(p[k]); }).join('&');
       var fullUrl = url + sep + qs;
