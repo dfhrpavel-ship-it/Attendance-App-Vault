@@ -74,8 +74,7 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
 .gc{min-width:38px;height:26px;border-radius:5px;font-size:9px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;border:none;transition:all .15s;user-select:none}
 .gc:hover{transform:scale(1.06)}
 .gc.empty{background:#f3f4f6;color:#d1d5db}
-.day-sun{background:#374151!important}.day-sat{background:#374151!important}.day-today{box-shadow:inset 0 -3px 0 #FFD24B}
-.wkend{background:transparent!important}
+.day-today{box-shadow:inset 0 -3px 0 #FFD24B}
 .badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600}
 .fade-in{animation:fi .4s ease forwards}
 @keyframes fi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -390,6 +389,43 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
     <button id="btnViewLoginHistory" onclick="openDeviceModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3"><i class="fa-solid fa-laptop mr-1"></i>View Login History</button>
     <button id="btnInstallPWA" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3 hidden" onclick="installPWA()"><i class="fa-solid fa-download mr-1"></i>Install App</button>
     <button onclick="saveSettings()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-400 text-white text-sm font-semibold shadow-md"><i class="fa-solid fa-floppy-disk mr-1"></i>Save All Settings</button>
+  </div>
+</div>
+
+<!-- EMPLOYEE PROFILE MODAL -->
+<div id="profileModal" class="modal-overlay" onclick="if(event.target===this)closeProfile()">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center"><i class="fa-solid fa-id-card text-primary-600"></i></div><div><h3 class="text-base font-bold">Employee Profile</h3><p class="text-[11px] text-gray-400" id="profileEmpId"></p></div></div>
+      <button onclick="closeProfile()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="profileLoading" class="text-center py-8"><div class="spinner spinner-d mx-auto mb-2" style="width:28px;height:28px"></div><p class="text-xs text-gray-400">Loading profile...</p></div>
+    <div id="profileBody" class="hidden">
+      <div class="flex items-center gap-4 mb-5 pb-4 border-b border-gray-100">
+        <div id="profilePhoto"></div>
+        <div><h4 id="profileName" class="text-lg font-bold text-gray-800"></h4><p id="profileDesig" class="text-xs text-gray-500"></p><span id="profileStatus" class="badge mt-1 inline-block"></span></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <div class="p-3 rounded-xl bg-gray-50"><p class="text-[9px] text-gray-400 uppercase font-bold">Department</p><p id="profileDept" class="text-xs font-semibold text-gray-700 mt-0.5"></p></div>
+        <div class="p-3 rounded-xl bg-gray-50"><p class="text-[9px] text-gray-400 uppercase font-bold">Category</p><p id="profileCat" class="text-xs font-semibold text-gray-700 mt-0.5"></p></div>
+        <div class="p-3 rounded-xl bg-gray-50"><p class="text-[9px] text-gray-400 uppercase font-bold">Shift</p><p id="profileShift" class="text-xs font-semibold text-gray-700 mt-0.5"></p></div>
+        <div class="p-3 rounded-xl bg-gray-50"><p class="text-[9px] text-gray-400 uppercase font-bold">Joining Date</p><p id="profileJoin" class="text-xs font-semibold text-gray-700 mt-0.5"></p></div>
+        <div class="p-3 rounded-xl bg-gray-50"><p class="text-[9px] text-gray-400 uppercase font-bold">Phone</p><p id="profilePhone" class="text-xs font-semibold text-gray-700 mt-0.5"></p></div>
+        <div class="p-3 rounded-xl bg-gray-50"><p class="text-[9px] text-gray-400 uppercase font-bold">Email</p><p id="profileEmail" class="text-xs font-semibold text-gray-700 mt-0.5 break-all"></p></div>
+      </div>
+      <div id="profileEmerg" class="mb-4 p-3 rounded-xl bg-amber-50 hidden"><p class="text-[9px] text-amber-500 uppercase font-bold">Emergency Contact</p><p id="profileEmergVal" class="text-xs font-semibold text-gray-700 mt-0.5"></p></div>
+      <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-chart-pie mr-1 text-primary-500"></i>Leave Balances</h4>
+      <div class="grid grid-cols-4 gap-2 mb-4">
+        <div class="text-center p-2 rounded-xl bg-blue-50"><p class="text-[9px] text-gray-400">CL</p><p id="profileCL" class="text-sm font-bold text-blue-600">0</p></div>
+        <div class="text-center p-2 rounded-xl bg-pink-50"><p class="text-[9px] text-gray-400">SL</p><p id="profileSL" class="text-sm font-bold text-pink-600">0</p></div>
+        <div class="text-center p-2 rounded-xl bg-indigo-50"><p class="text-[9px] text-gray-400">EL</p><p id="profileEL" class="text-sm font-bold text-indigo-600">0</p></div>
+        <div class="text-center p-2 rounded-xl bg-purple-50"><p class="text-[9px] text-gray-400">PL</p><p id="profilePL" class="text-sm font-bold text-purple-600">0</p></div>
+      </div>
+      <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-calendar-check mr-1 text-green-500"></i>Attendance Summary</h4>
+      <div id="profileAttSummary" class="grid grid-cols-3 gap-2 mb-4"></div>
+      <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-calendar-days mr-1 text-amber-500"></i>Leave History</h4>
+      <div id="profileLeaveHistory" class="max-h-48 overflow-y-auto"></div>
+    </div>
   </div>
 </div>
 
@@ -1124,7 +1160,7 @@ function renderMonthlyGrid(month, startDate, endDate) {
     var dateStr = year+'-'+String(mon).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     var isToday = dateStr === todayStr;
     var isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
-    var cls = (dt.getDay()===0?' day-sun':'')+(dt.getDay()===6?' day-sat':'')+(isToday?' day-today':'');
+    var cls = isToday ? ' day-today' : '';
     html += '<th class="'+cls+'" title="'+dayName+' '+d+'">'+d+'<br><span style="font-size:8px;opacity:.7">'+dayName+'</span></th>';
   }
   html += '</tr></thead><tbody>';
@@ -1289,7 +1325,7 @@ function onZoomTouchStart(e) {
     CFG.lastTouchDist = getTouchDist(e.touches);
     CFG.lastPanX = e.touches[0].clientX;
     CFG.lastPanY = e.touches[0].clientY;
-  } else if (e.touches.length === 1 && CFG.zoomScale > 1) {
+  } else if (e.touches.length === 1) {
     CFG.isPanning = true;
     CFG.lastPanX = e.touches[0].clientX;
     CFG.lastPanY = e.touches[0].clientY;
@@ -1318,7 +1354,6 @@ function onZoomTouchMove(e) {
 
 function onZoomTouchEnd(e) {
   CFG.isZooming = false;
-  CFG.isPanning = false;
   if (e.touches.length === 0) {
     // Double tap detection
     var now = Date.now();
@@ -1328,6 +1363,7 @@ function onZoomTouchEnd(e) {
       applyZoom();
     }
     CFG._lastTap = now;
+    CFG.isPanning = false;
   }
   // Hide zoom indicator after delay
   clearTimeout(CFG._zoomTimeout);
@@ -1424,16 +1460,89 @@ function exportAnalyticsCSV() {
   toast('Exporting analytics...', 'info');
 }
 
-// ── Employees ────────────────────────────────────────────
+// ── Employee Profile ────────────────────────────────────
+function viewEmpProfile(empId) {
+  var modal = document.getElementById('profileModal');
+  var loading = document.getElementById('profileLoading');
+  var body = document.getElementById('profileBody');
+  document.getElementById('profileEmpId').textContent = empId;
+  loading.classList.remove('hidden');
+  body.classList.add('hidden');
+  modal.classList.add('open');
+  Promise.all([apiCall('employeeProfile', {empId:empId}), apiCall('leaveApplications', {empId:empId})])
+  .then(function(results) {
+    loading.classList.add('hidden');
+    var profData = (results[0].success && results[0].data) ? results[0].data : null;
+    var leaveData = (results[1].success && results[1].data) ? results[1].data : [];
+    if (!profData) { body.innerHTML = '<p class="text-xs text-red-400 text-center py-6">Employee not found.</p>'; body.classList.remove('hidden'); return; }
+    var emp = profData.employee;
+    var summary = profData.summary || {};
+    var initials = (emp.Name||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
+    var photo = emp.Image_URL;
+    var photoHtml = photo
+      ? '<img src="'+photo+'" class="w-16 h-16 rounded-2xl object-cover border-2 border-primary-100" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"/><div class="av w-16 h-16 text-xl" style="display:none">'+initials+'</div>'
+      : '<div class="av w-16 h-16 text-xl">'+initials+'</div>';
+    document.getElementById('profilePhoto').innerHTML = photoHtml;
+    document.getElementById('profileName').textContent = emp.Name || '';
+    document.getElementById('profileDesig').textContent = emp.Designation || '';
+    var isActive = !emp.Status || emp.Status.toString().toLowerCase() === 'active';
+    document.getElementById('profileStatus').textContent = emp.Status || 'Active';
+    document.getElementById('profileStatus').className = 'badge mt-1 inline-block ' + (isActive ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500');
+    document.getElementById('profileDept').textContent = emp.Department || '-';
+    document.getElementById('profileCat').textContent = emp.Category || '-';
+    document.getElementById('profileShift').textContent = emp.Shift || '-';
+    document.getElementById('profileJoin').textContent = emp.Joining_Date || '-';
+    document.getElementById('profilePhone').textContent = emp.Phone || '-';
+    document.getElementById('profileEmail').textContent = emp.Email || '-';
+    var emerg = emp.Emergency_Contact || '';
+    if (emerg) { document.getElementById('profileEmerg').classList.remove('hidden'); document.getElementById('profileEmergVal').textContent = emerg; }
+    else { document.getElementById('profileEmerg').classList.add('hidden'); }
+    document.getElementById('profileCL').textContent = emp.CL_Balance || 0;
+    document.getElementById('profileSL').textContent = emp.SL_Balance || 0;
+    document.getElementById('profileEL').textContent = emp.EL_Balance || 0;
+    document.getElementById('profilePL').textContent = emp.PL_Balance || 0;
+    // Attendance summary
+    var attSumHtml = '';
+    var sumKeys = ['P','A','CL','SL','EL','PL','HD','WHD','GHD'];
+    sumKeys.forEach(function(k) {
+      if (summary[k]) {
+        var label = SC[k] ? SC[k].label : k;
+        attSumHtml += '<div class="p-2 rounded-xl text-center" style="background:'+SC[k].bg+'20"><p class="text-[9px] text-gray-400">'+label+'</p><p class="text-sm font-bold" style="color:'+SC[k].bg+'">'+summary[k]+'</p></div>';
+      }
+    });
+    if (!attSumHtml) attSumHtml = '<p class="text-xs text-gray-400 text-center col-span-3 py-2">No attendance records yet.</p>';
+    document.getElementById('profileAttSummary').innerHTML = attSumHtml;
+    // Leave history
+    if (leaveData.length === 0) {
+      document.getElementById('profileLeaveHistory').innerHTML = '<p class="text-xs text-gray-400 text-center py-3">No leave records found.</p>';
+    } else {
+      var lvHtml = '';
+      leaveData.slice().reverse().forEach(function(lv) {
+        var st = (lv.Status||'').toLowerCase();
+        var cls = st === 'approved' ? 'leave-approved' : st === 'rejected' ? 'leave-rejected' : 'leave-pending';
+        lvHtml += '<div class="leave-row '+cls+'"><div class="flex items-center justify-between"><p class="text-xs font-semibold text-gray-700">'+(lv.Leave_Type||'')+' ('+(lv.Days||1)+' day(s))</p><span class="badge '+(st==='approved'?'bg-green-50 text-green-600':st==='rejected'?'bg-red-50 text-red-500':'bg-amber-50 text-amber-600')+'">'+(lv.Status||'')+'</span></div><p class="text-[10px] text-gray-400 mt-0.5">'+(lv.Start_Date||'')+' to '+(lv.End_Date||'')+' | '+((lv.Reason||'').substring(0,60))+'</p></div>';
+      });
+      document.getElementById('profileLeaveHistory').innerHTML = lvHtml;
+    }
+    body.classList.remove('hidden');
+  })
+  .catch(function(e) { loading.classList.add('hidden'); body.innerHTML = '<p class="text-xs text-red-400 text-center py-6">Failed to load profile: '+(e.error||'Error')+'</p>'; body.classList.remove('hidden'); });
+}
+
+function closeProfile() { document.getElementById('profileModal').classList.remove('open'); }
+
+// ── Employees List ────────────────────────────────────
 var allEmpsCache = [];
 
 function loadAllEmployees() {
   apiCall('allEmployees')
   .then(function(r) {
     allEmpsCache = (r.success && r.data) ? r.data : [];
+    console.log('Loaded employees:', allEmpsCache.length);
     populateDeptFilter();
+    renderEmpList();
   })
-  .catch(function(){});
+  .catch(function(e){ console.error('Failed to load employees:', e); });
 }
 
 function populateDeptFilter() {
@@ -1481,6 +1590,7 @@ function renderEmpList() {
         : '<span class="badge bg-red-50 text-red-500">Inactive</span>';
       var isManager = CFG.user && (CFG.user.role === 'admin' || CFG.user.role === 'super_admin' || CFG.user.role === 'manager');
       html += '<tr class="el-row border-b border-gray-50"><td class="py-2 px-2"><input type="checkbox" class="emp-chk rounded" value="'+emp.Emp_ID+'" onchange="updateBulkBar()"/></td><td class="py-2 px-2 text-[10px] text-gray-400">'+idx+'</td><td class="py-2 px-2"><div class="flex items-center gap-2 min-w-0">'+photoHtml+'<div class="min-w-0"><p class="text-xs font-semibold text-gray-700 truncate">'+(emp.Name||'')+'</p><p class="text-[10px] text-gray-400">'+(emp.Emp_ID||'')+'</p></div></div></td><td class="py-2 px-2 text-xs text-gray-500 hidden sm:table-cell">'+(emp.Designation||'-')+'</td><td class="py-2 px-2 text-xs text-gray-500 hidden md:table-cell">'+(emp.Department||'-')+'</td><td class="py-2 px-2 text-xs text-gray-500 hidden lg:table-cell">'+(emp.Category||'-')+'</td><td class="py-2 px-2 text-xs text-gray-500 hidden lg:table-cell">'+(emp.Shift||'-')+'</td><td class="py-2 px-2 text-center">'+statusBadge+'</td><td class="py-2 px-2 text-center no-print"><div class="flex items-center justify-center gap-1">';
+      html += '<button onclick="viewEmpProfile(\''+emp.Emp_ID+'\')" class="w-7 h-7 rounded-lg hover:bg-green-50 flex items-center justify-center text-green-500" title="View Profile"><i class="fa-solid fa-user text-[10px]"></i></button>';
       if (isManager) {
         html += '<button onclick="editEmployee(\''+emp.Emp_ID+'\')" class="w-7 h-7 rounded-lg hover:bg-blue-50 flex items-center justify-center text-blue-500" title="Edit"><i class="fa-solid fa-pen text-[10px]"></i></button>';
         html += '<button onclick="toggleStatus(\''+emp.Emp_ID+'\')" class="w-7 h-7 rounded-lg hover:bg-amber-50 flex items-center justify-center text-amber-500" title="Toggle Status"><i class="fa-solid fa-toggle-'+(isActive?'on':'off')+' text-[10px]"></i></button>';
