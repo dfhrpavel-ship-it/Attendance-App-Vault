@@ -57,7 +57,7 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
 .dd-menu button{display:flex;align-items:center;gap:7px;width:100%;padding:7px 10px;border:none;background:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:background .12s;font-family:'Poppins',sans-serif;color:#374151}
 .dd-menu button:hover{background:#f3f4f6}
 .dd-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
-.grid-wrapper{overflow:auto;max-height:calc(100vh - 260px);border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.03);touch-action:none}
+.grid-wrapper{overflow:auto;max-height:calc(100vh - 260px);border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.03)}
 .gt{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
 .gt thead th{position:sticky;top:0;z-index:20;background:#1B4332;color:#fff;font-weight:600;font-size:10px;padding:9px 4px;text-align:center;white-space:nowrap;border-right:1px solid rgba(255,255,255,.06)}
 .gt thead th:nth-child(1),.gt thead th:nth-child(2),.gt thead th:nth-child(3){position:sticky;z-index:30}
@@ -92,10 +92,11 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
 @media print{.no-print{display:none!important}}
 @media(max-width:640px){.tab-btn{padding:7px 12px;font-size:11px}}
 @media(max-width:640px){.gt thead th:nth-child(3),.gt tbody td:nth-child(3){display:none!important}.gt thead th:nth-child(2){left:24px}.gt tbody td:nth-child(2){left:24px}}
-.zoom-indicator{position:fixed;bottom:140px;right:16px;z-index:45;background:rgba(27,67,50,.85);color:#fff;padding:6px 12px;border-radius:10px;font-size:11px;font-weight:600;backdrop-filter:blur(8px);pointer-events:none;opacity:0;transition:opacity .3s}
+.zoom-ctrl{position:fixed;bottom:140px;right:16px;z-index:45;display:flex;flex-direction:column;gap:4px}
+.zoom-ctrl button{width:36px;height:36px;border-radius:10px;background:rgba(27,67,50,.9);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.2);font-size:14px;font-weight:700}
+.zoom-ctrl button:active{background:#143728}
+.zoom-indicator{position:fixed;bottom:220px;right:16px;z-index:45;background:rgba(27,67,50,.85);color:#fff;padding:4px 10px;border-radius:8px;font-size:10px;font-weight:600;backdrop-filter:blur(8px);pointer-events:none;opacity:0;transition:opacity .3s}
 .zoom-indicator.show{opacity:1}
-.zoom-reset{position:fixed;bottom:170px;right:16px;z-index:45;width:36px;height:36px;border-radius:10px;background:rgba(27,67,50,.9);color:#fff;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.2)}
-.zoom-reset.show{display:flex}
 </style>
 </head>
 <body>
@@ -388,6 +389,13 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
     <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-shield-halved mr-1 text-primary-500"></i>Device Management <span class="badge bg-primary-50 text-primary-600 ml-1">Admin</span></h4>
     <button id="btnViewLoginHistory" onclick="openDeviceModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3"><i class="fa-solid fa-laptop mr-1"></i>View Login History</button>
     <button id="btnInstallPWA" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3 hidden" onclick="installPWA()"><i class="fa-solid fa-download mr-1"></i>Install App</button>
+    <hr class="my-4 border-gray-100">
+    <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-user-shield mr-1 text-primary-500"></i>Profile View Access <span class="badge bg-primary-50 text-primary-600 ml-1">Admin</span></h4>
+    <p class="text-[10px] text-gray-400 mb-2">Select which roles can view Employee Profiles. System Admin always has full access.</p>
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      <label class="flex items-center gap-2 text-xs cursor-pointer"><input type="checkbox" id="accessProfile_manager" class="rounded accent-green-600" checked onchange="saveProfileAccess()"/><span>Manager</span></label>
+      <label class="flex items-center gap-2 text-xs cursor-pointer"><input type="checkbox" id="accessProfile_user" class="rounded accent-green-600" onchange="saveProfileAccess()"/><span>Employee</span></label>
+    </div>
     <button onclick="saveSettings()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-400 text-white text-sm font-semibold shadow-md"><i class="fa-solid fa-floppy-disk mr-1"></i>Save All Settings</button>
   </div>
 </div>
@@ -547,8 +555,12 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
 </div>
 
 <!-- Zoom indicator for monthly grid -->
-<div id="zoomIndicator" class="zoom-indicator"><i class="fa-solid fa-magnifying-glass mr-1"></i><span id="zoomLevel">100%</span></div>
-<button id="zoomResetBtn" class="zoom-reset" onclick="resetZoom()"><i class="fa-solid fa-compress"></i></button>
+<div id="zoomIndicator" class="zoom-indicator"><span id="zoomLevel">100%</span></div>
+<div id="zoomCtrl" class="zoom-ctrl" style="display:none">
+  <button onclick="zoomIn()" title="Zoom In">+</button>
+  <button onclick="zoomOut()" title="Zoom Out">−</button>
+  <button onclick="resetTableZoom()" title="Reset" style="font-size:11px">↺</button>
+</div>
 
 <!-- Toast -->
 <div id="toast" class="toast"></div>
@@ -610,6 +622,25 @@ var SC = {
 };
 var SC_KEYS = Object.keys(SC);
 
+// ── BD Timezone Helper ──────────────────────────────────
+function bdNow() {
+  return new Date(new Date().toLocaleString('en-US', {timeZone: 'Asia/Dhaka'}));
+}
+function bdDateStr() {
+  var d = bdNow();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function bdMonthStr() {
+  var d = bdNow();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function bdDateDisplay() {
+  var d = bdNow();
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
 // ── Color palette for departments ─────────────────────────
 var DEPT_COLORS = ['#2D6A4F','#40916C','#52B788','#3b82f6','#8b5cf6','#f59e0b','#ef4444','#ec4899','#06b6d4','#14b8a6','#f97316','#6366f1'];
 var CHART_COLORS = ['#22c55e','#ef4444','#f59e0b','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#14b8a6','#f97316','#6366f1','#64748b','#a855f7'];
@@ -621,15 +652,14 @@ var CHART_COLORS = ['#22c55e','#ef4444','#f59e0b','#3b82f6','#8b5cf6','#ec4899',
   CFG.gasUrl = localStorage.getItem('gasUrl') || '';
   var u = localStorage.getItem('aeUser');
   if (u) { try { CFG.user = JSON.parse(u); } catch(e) { CFG.user = null; } }
-  var today = new Date();
-  var ds = today.toISOString().split('T')[0];
+  var ds = bdDateStr();
   var el = document.getElementById('attDate');
   if (el) el.value = ds;
   var mp = document.getElementById('monthPicker');
-  if (mp) mp.value = ds.substring(0,7);
+  if (mp) mp.value = bdMonthStr();
   var am = document.getElementById('analyticsMonth');
-  if (am) am.value = ds.substring(0,7);
-  document.getElementById('footerYear').textContent = today.getFullYear();
+  if (am) am.value = bdMonthStr();
+  document.getElementById('footerYear').textContent = bdNow().getFullYear();
   applyBranding();
   if (CFG.gasUrl && CFG.user) {
     showDashboard();
@@ -733,11 +763,8 @@ function updateHeader() {
   if (!CFG.user) return;
   document.getElementById('headerUser').textContent = CFG.user.displayName || CFG.user.username;
   document.getElementById('loginUser').value = CFG.user.username;
-  var today = new Date();
-  var opts = {weekday:'long', year:'numeric', month:'long', day:'numeric'};
-  var ds = today.toLocaleDateString('en-US', opts);
-  document.getElementById('headerDate').textContent = ds;
-  document.getElementById('headerDateM').textContent = today.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  document.getElementById('headerDate').textContent = bdDateDisplay();
+  document.getElementById('headerDateM').textContent = bdNow().toLocaleDateString('en-US', {month:'short', day:'numeric'});
   // Role badge
   var rb = document.getElementById('headerRoleBadge');
   var role = CFG.user.role || 'user';
@@ -807,6 +834,7 @@ function openSettings() {
   document.getElementById('brandPhone').value = localStorage.getItem('brandPhone') || '';
   document.getElementById('brandLogo').value = localStorage.getItem('brandLogo') || '';
   previewBrandLogo();
+  loadProfileAccess();
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
@@ -823,32 +851,29 @@ function saveSettings() {
   closeSettings();
 }
 
-function testConn() {
-  var url = document.getElementById('gasUrl').value.trim();
-  if (!url) { toast('Enter a URL first', 'error'); return; }
-  var st = document.getElementById('connStatus');
-  var msg = document.getElementById('connMsg');
-  st.classList.remove('hidden');
-  msg.textContent = 'Testing...';
-  msg.className = 'text-xs rounded-lg px-3 py-2 bg-blue-50 text-blue-600';
-  var oldUrl = CFG.gasUrl;
-  CFG.gasUrl = url;
-  apiCall('checkStatus', {date: new Date().toISOString().split('T')[0]})
-  .then(function(r) {
-    if (r.success) {
-      msg.textContent = 'Connection successful! Backend is responding.';
-      msg.className = 'text-xs rounded-lg px-3 py-2 bg-green-50 text-green-600';
-    } else {
-      msg.textContent = 'Backend responded but returned error: ' + (r.error || 'Unknown');
-      msg.className = 'text-xs rounded-lg px-3 py-2 bg-amber-50 text-amber-600';
-    }
-    CFG.gasUrl = oldUrl;
-  })
-  .catch(function(e) {
-    msg.textContent = 'Connection failed: ' + (e.error || e.message || 'Check URL');
-    msg.className = 'text-xs rounded-lg px-3 py-2 bg-red-50 text-red-600';
-    CFG.gasUrl = oldUrl;
-  });
+function loadProfileAccess() {
+  var cfg = JSON.parse(localStorage.getItem('profileAccess') || '{"manager":true,"user":false}');
+  var m = document.getElementById('accessProfile_manager');
+  var u = document.getElementById('accessProfile_user');
+  if (m) m.checked = cfg.manager !== false;
+  if (u) u.checked = cfg.user === true;
+}
+
+function saveProfileAccess() {
+  var cfg = {
+    manager: document.getElementById('accessProfile_manager').checked,
+    user: document.getElementById('accessProfile_user').checked
+  };
+  localStorage.setItem('profileAccess', JSON.stringify(cfg));
+  toast('Access settings saved!', 'success');
+}
+
+function canViewProfiles() {
+  if (!CFG.user) return false;
+  var role = (CFG.user.role || '').toLowerCase();
+  if (role === 'admin' || role === 'super_admin') return true;
+  var cfg = JSON.parse(localStorage.getItem('profileAccess') || '{"manager":true,"user":false}');
+  return cfg[role] === true;
 }
 
 function previewBrandLogo() {
@@ -1152,14 +1177,13 @@ function renderMonthlyGrid(month, startDate, endDate) {
   });
   document.getElementById('mLegend').innerHTML = legendHtml;
   // Build table
-  var html = '<table class="gt"><thead><tr><th>#</th><th>Employee</th><th>ID</th>';
+  var html = '<table id="monthlyTable" class="gt"><thead><tr><th>#</th><th>Employee</th><th>ID</th>';
   for (var d = 1; d <= daysInMonth; d++) {
     var dt = new Date(year, mon-1, d);
     var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     var dayName = dayNames[dt.getDay()];
     var dateStr = year+'-'+String(mon).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     var isToday = dateStr === todayStr;
-    var isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
     var cls = isToday ? ' day-today' : '';
     html += '<th class="'+cls+'" title="'+dayName+' '+d+'">'+d+'<br><span style="font-size:8px;opacity:.7">'+dayName+'</span></th>';
   }
@@ -1181,8 +1205,8 @@ function renderMonthlyGrid(month, startDate, endDate) {
   });
   html += '</tbody></table>';
   var gridEl = document.getElementById('monthlyGrid');
-  gridEl.innerHTML = '<div id="monthlyTableWrap" style="transform-origin:top left">'+html+'</div>';
-  initPinchZoom();
+  gridEl.innerHTML = html;
+  initTableZoom();
 }
 
 function openMonthlyDD(event, empId, name, date, btn) {
@@ -1304,100 +1328,44 @@ function exportMonthlyCSV() {
   toast('Monthly CSV exported!', 'success');
 }
 
-// ── Pinch-to-Zoom for Monthly Grid ───────────────────────
-function initPinchZoom() {
-  var grid = document.getElementById('monthlyGrid');
-  if (!grid) return;
-  // Remove old listeners
-  grid.removeEventListener('touchstart', onZoomTouchStart);
-  grid.removeEventListener('touchmove', onZoomTouchMove);
-  grid.removeEventListener('touchend', onZoomTouchEnd);
-  // Add new
-  grid.addEventListener('touchstart', onZoomTouchStart, {passive:false});
-  grid.addEventListener('touchmove', onZoomTouchMove, {passive:false});
-  grid.addEventListener('touchend', onZoomTouchEnd);
+// ── Table Zoom for Monthly Grid (CSS zoom — preserves sticky) ──
+var TABLE_ZOOM_LEVELS = [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.2, 1.5, 1.8, 2, 2.5, 3];
+var tableZoomIdx = 5; // index 5 = 1x (100%)
+
+function initTableZoom() {
+  var ctrl = document.getElementById('zoomCtrl');
+  if (ctrl) ctrl.style.display = 'flex';
+  tableZoomIdx = 5;
+  applyTableZoom();
 }
 
-function onZoomTouchStart(e) {
-  if (e.touches.length === 2) {
-    e.preventDefault();
-    CFG.isZooming = true;
-    CFG.lastTouchDist = getTouchDist(e.touches);
-    CFG.lastPanX = e.touches[0].clientX;
-    CFG.lastPanY = e.touches[0].clientY;
-  } else if (e.touches.length === 1) {
-    CFG.isPanning = true;
-    CFG.lastPanX = e.touches[0].clientX;
-    CFG.lastPanY = e.touches[0].clientY;
-  }
+function zoomIn() {
+  if (tableZoomIdx < TABLE_ZOOM_LEVELS.length - 1) { tableZoomIdx++; applyTableZoom(); }
 }
 
-function onZoomTouchMove(e) {
-  if (CFG.isZooming && e.touches.length === 2) {
-    e.preventDefault();
-    var dist = getTouchDist(e.touches);
-    var delta = dist / CFG.lastTouchDist;
-    CFG.zoomScale = Math.min(3, Math.max(1, CFG.zoomScale * delta));
-    CFG.lastTouchDist = dist;
-    applyZoom();
-  } else if (CFG.isPanning && e.touches.length === 1) {
-    e.preventDefault();
-    var dx = e.touches[0].clientX - CFG.lastPanX;
-    var dy = e.touches[0].clientY - CFG.lastPanY;
-    CFG.zoomPan.x += dx;
-    CFG.zoomPan.y += dy;
-    CFG.lastPanX = e.touches[0].clientX;
-    CFG.lastPanY = e.touches[0].clientY;
-    applyZoom();
-  }
+function zoomOut() {
+  if (tableZoomIdx > 0) { tableZoomIdx--; applyTableZoom(); }
 }
 
-function onZoomTouchEnd(e) {
-  CFG.isZooming = false;
-  if (e.touches.length === 0) {
-    // Double tap detection
-    var now = Date.now();
-    if (CFG._lastTap && now - CFG._lastTap < 300) {
-      CFG.zoomScale = CFG.zoomScale > 1 ? 1 : 2;
-      if (CFG.zoomScale === 1) { CFG.zoomPan.x = 0; CFG.zoomPan.y = 0; }
-      applyZoom();
-    }
-    CFG._lastTap = now;
-    CFG.isPanning = false;
-  }
-  // Hide zoom indicator after delay
-  clearTimeout(CFG._zoomTimeout);
-  CFG._zoomTimeout = setTimeout(function() {
-    document.getElementById('zoomIndicator').classList.remove('show');
-  }, 1500);
+function resetTableZoom() {
+  tableZoomIdx = 5;
+  applyTableZoom();
 }
 
-function getTouchDist(touches) {
-  var dx = touches[0].clientX - touches[1].clientX;
-  var dy = touches[0].clientY - touches[1].clientY;
-  return Math.sqrt(dx*dx + dy*dy);
-}
-
-function applyZoom() {
-  var wrap = document.getElementById('monthlyTableWrap');
-  if (!wrap) return;
-  wrap.style.transform = 'translate('+CFG.zoomPan.x+'px,'+CFG.zoomPan.y+'px) scale('+CFG.zoomScale+')';
+function applyTableZoom() {
+  var table = document.getElementById('monthlyTable');
+  if (!table) return;
+  var z = TABLE_ZOOM_LEVELS[tableZoomIdx];
+  table.style.zoom = z;
   // Show indicator
   var zi = document.getElementById('zoomIndicator');
-  document.getElementById('zoomLevel').textContent = Math.round(CFG.zoomScale * 100) + '%';
-  zi.classList.add('show');
-  // Show/hide reset button
-  var rb = document.getElementById('zoomResetBtn');
-  if (CFG.zoomScale > 1) rb.classList.add('show');
-  else rb.classList.remove('show');
+  var zl = document.getElementById('zoomLevel');
+  if (zl) zl.textContent = Math.round(z * 100) + '%';
+  if (zi) { zi.classList.add('show'); clearTimeout(zi._t); zi._t = setTimeout(function(){ zi.classList.remove('show'); }, 1200); }
 }
 
-function resetZoom() {
-  CFG.zoomScale = 1;
-  CFG.zoomPan = {x:0, y:0};
-  applyZoom();
-  document.getElementById('zoomResetBtn').classList.remove('show');
-}
+// Keep old resetZoom for any backward compat
+function resetZoom() { resetTableZoom(); }
 
 // ── Reports / Analytics ──────────────────────────────────
 function loadAnalytics() {
@@ -1538,7 +1506,7 @@ function loadAllEmployees() {
   apiCall('allEmployees')
   .then(function(r) {
     allEmpsCache = (r.success && r.data) ? r.data : [];
-    console.log('Loaded employees:', allEmpsCache.length);
+    console.log('Loaded employees (all):', allEmpsCache.length);
     populateDeptFilter();
     renderEmpList();
   })
@@ -1590,7 +1558,9 @@ function renderEmpList() {
         : '<span class="badge bg-red-50 text-red-500">Inactive</span>';
       var isManager = CFG.user && (CFG.user.role === 'admin' || CFG.user.role === 'super_admin' || CFG.user.role === 'manager');
       html += '<tr class="el-row border-b border-gray-50"><td class="py-2 px-2"><input type="checkbox" class="emp-chk rounded" value="'+emp.Emp_ID+'" onchange="updateBulkBar()"/></td><td class="py-2 px-2 text-[10px] text-gray-400">'+idx+'</td><td class="py-2 px-2"><div class="flex items-center gap-2 min-w-0">'+photoHtml+'<div class="min-w-0"><p class="text-xs font-semibold text-gray-700 truncate">'+(emp.Name||'')+'</p><p class="text-[10px] text-gray-400">'+(emp.Emp_ID||'')+'</p></div></div></td><td class="py-2 px-2 text-xs text-gray-500 hidden sm:table-cell">'+(emp.Designation||'-')+'</td><td class="py-2 px-2 text-xs text-gray-500 hidden md:table-cell">'+(emp.Department||'-')+'</td><td class="py-2 px-2 text-xs text-gray-500 hidden lg:table-cell">'+(emp.Category||'-')+'</td><td class="py-2 px-2 text-xs text-gray-500 hidden lg:table-cell">'+(emp.Shift||'-')+'</td><td class="py-2 px-2 text-center">'+statusBadge+'</td><td class="py-2 px-2 text-center no-print"><div class="flex items-center justify-center gap-1">';
-      html += '<button onclick="viewEmpProfile(\''+emp.Emp_ID+'\')" class="w-7 h-7 rounded-lg hover:bg-green-50 flex items-center justify-center text-green-500" title="View Profile"><i class="fa-solid fa-user text-[10px]"></i></button>';
+      if (canViewProfiles()) {
+        html += '<button onclick="viewEmpProfile(\''+emp.Emp_ID+'\')" class="w-7 h-7 rounded-lg hover:bg-green-50 flex items-center justify-center text-green-500" title="View Profile"><i class="fa-solid fa-user text-[10px]"></i></button>';
+      }
       if (isManager) {
         html += '<button onclick="editEmployee(\''+emp.Emp_ID+'\')" class="w-7 h-7 rounded-lg hover:bg-blue-50 flex items-center justify-center text-blue-500" title="Edit"><i class="fa-solid fa-pen text-[10px]"></i></button>';
         html += '<button onclick="toggleStatus(\''+emp.Emp_ID+'\')" class="w-7 h-7 rounded-lg hover:bg-amber-50 flex items-center justify-center text-amber-500" title="Toggle Status"><i class="fa-solid fa-toggle-'+(isActive?'on':'off')+' text-[10px]"></i></button>';
