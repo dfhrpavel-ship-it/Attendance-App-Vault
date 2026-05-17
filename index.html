@@ -13,6 +13,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
 tailwind.config={theme:{extend:{fontFamily:{poppins:['Poppins','sans-serif']},colors:{primary:{50:'#E8F5EE',100:'#C6E7D5',200:'#95D5B2',300:'#52B788',400:'#40916C',500:'#2D6A4F',600:'#1B4332',700:'#143728',800:'#0D2818'}}}}}
 </script>
@@ -97,6 +99,24 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
 .zoom-ctrl button:active{background:#143728}
 .zoom-indicator{position:fixed;bottom:220px;right:16px;z-index:45;background:rgba(27,67,50,.85);color:#fff;padding:4px 10px;border-radius:8px;font-size:10px;font-weight:600;backdrop-filter:blur(8px);pointer-events:none;opacity:0;transition:opacity .3s}
 .zoom-indicator.show{opacity:1}
+.qr-scanner-box{border:3px solid #2D6A4F;border-radius:20px;overflow:hidden;background:#1B4332}
+.checkin-card{background:linear-gradient(135deg,#1B4332,#2D6A4F);color:#fff;border-radius:20px;padding:20px;text-align:center;position:relative;overflow:hidden}
+.checkin-card::before{content:'';position:absolute;inset:-50%;background:radial-gradient(circle at 30% 50%,rgba(149,213,178,.1)0%,transparent 50%);animation:cif 15s ease-in-out infinite}
+@keyframes cif{0%,100%{transform:translate(0,0)}50%{transform:translate(15px,-15px)}}
+.ci-btn{width:140px;height:140px;border-radius:50%;border:4px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;margin:0 auto;position:relative;z-index:1}
+.ci-btn:hover{transform:scale(1.05);box-shadow:0 0 40px rgba(149,213,178,.3)}
+.ci-btn.checkin{background:linear-gradient(135deg,#22c55e,#16a34a)}
+.ci-btn.checkout{background:linear-gradient(135deg,#f97316,#ea580c)}
+.ci-btn.disabled{background:#6b7280;cursor:not-allowed;opacity:.6}
+.ci-btn.disabled:hover{transform:none;box-shadow:none}
+.office-card{background:#fff;border-radius:16px;border:1px solid #e5e7eb;padding:16px;margin-bottom:12px;transition:all .3s}
+.office-card:hover{border-color:#95D5B2;box-shadow:0 4px 16px rgba(27,67,50,.08)}
+.qr-print{background:#fff;padding:24px;border-radius:12px;text-align:center;display:inline-block}
+.qr-print .qr-container{margin:12px auto}
+.status-pulse{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px}
+.status-pulse.active{background:#22c55e;box-shadow:0 0 8px #22c55e}
+.status-pulse.inactive{background:#ef4444;box-shadow:0 0 8px #ef4444}
+.override-row{display:flex;align-items:center;gap:10px;padding:10px;background:#f9fafb;border-radius:12px;margin-bottom:8px;border:1px solid #e5e7eb}
 </style>
 </head>
 <body>
@@ -389,6 +409,8 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
     <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-shield-halved mr-1 text-primary-500"></i>Device Management <span class="badge bg-primary-50 text-primary-600 ml-1">Admin</span></h4>
     <button id="btnViewLoginHistory" onclick="openDeviceModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3"><i class="fa-solid fa-laptop mr-1"></i>View Login History</button>
     <button id="btnInstallPWA" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3 hidden" onclick="installPWA()"><i class="fa-solid fa-download mr-1"></i>Install App</button>
+    <button id="btnOfficeManage" onclick="openOfficeModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3 hidden"><i class="fa-solid fa-building mr-1"></i>Manage Office Locations</button>
+    <button id="btnAdminOverride" onclick="openOverride()" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3 hidden"><i class="fa-solid fa-user-shield mr-1"></i>Admin Override Check-In/Out</button>
     <hr class="my-4 border-gray-100">
     <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-user-shield mr-1 text-primary-500"></i>Profile View Access <span class="badge bg-primary-50 text-primary-600 ml-1">Admin</span></h4>
     <p class="text-[10px] text-gray-400 mb-2">Select which roles can view Employee Profiles. System Admin always has full access.</p>
@@ -554,6 +576,78 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
   </div>
 </div>
 
+<!-- QR SCANNER MODAL -->
+<div id="qrScannerModal" class="modal-overlay" onclick="if(event.target===this)closeQRScanner()">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center"><i class="fa-solid fa-qrcode text-primary-600"></i></div><div><h3 class="text-base font-bold">Scan QR Code</h3><p class="text-[11px] text-gray-400" id="qrScanLabel">Point camera at office QR code</p></div></div>
+      <button onclick="closeQRScanner()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="qrScannerBox" class="qr-scanner-box mb-4"><div id="qrReader" style="width:100%"></div></div>
+    <div id="qrScanStatus" class="text-center text-xs text-gray-400 mb-3"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Getting GPS location...</div>
+    <div id="qrScanResult" class="hidden text-center p-4 rounded-xl mb-3"></div>
+    <div class="flex gap-2">
+      <button id="qrScanRetryBtn" onclick="startQRScan()" class="flex-1 py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold hidden"><i class="fa-solid fa-rotate mr-1"></i>Retry Scan</button>
+      <button onclick="closeQRScanner()" class="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-500 text-sm font-semibold">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- OFFICE LOCATION MANAGEMENT MODAL -->
+<div id="officeModal" class="modal-overlay" onclick="if(event.target===this)closeOfficeModal()">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center"><i class="fa-solid fa-building text-primary-600"></i></div><div><h3 class="text-base font-bold">Office Locations</h3><p class="text-[11px] text-gray-400">Manage check-in points</p></div></div><button onclick="closeOfficeModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button></div>
+    <button onclick="openAddOffice()" class="w-full py-2.5 rounded-xl border-2 border-dashed border-primary-200 text-primary-600 text-sm font-semibold mb-4 hover:bg-primary-50"><i class="fa-solid fa-plus mr-1"></i>Add Office Location</button>
+    <div id="addOfficeForm" class="hidden mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+      <h4 class="text-xs font-bold text-gray-700 mb-3">New Office Location</h4>
+      <div class="space-y-2 mb-3">
+        <input id="ofcName" class="ipt" placeholder="Office Name *"/>
+        <input id="ofcAddr" class="ipt" placeholder="Address *"/>
+        <div class="grid grid-cols-2 gap-2">
+          <input id="ofcLat" class="ipt" placeholder="Latitude" readonly/>
+          <input id="ofcLng" class="ipt" placeholder="Longitude" readonly/>
+        </div>
+        <button onclick="detectOfficeGPS()" class="w-full py-2 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold"><i class="fa-solid fa-location-crosshairs mr-1"></i>Detect My Current GPS</button>
+        <input id="ofcRadius" type="number" class="ipt" placeholder="Geo-fence radius (meters)" value="100"/>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="saveOffice()" class="flex-1 py-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-400 text-white text-sm font-semibold"><i class="fa-solid fa-save mr-1"></i>Save</button>
+        <button onclick="document.getElementById('addOfficeForm').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-gray-100 text-gray-500 text-sm font-semibold">Cancel</button>
+      </div>
+    </div>
+    <div id="officeLoading" class="hidden text-center py-8"><div class="spinner spinner-d mx-auto mb-2" style="width:28px;height:28px"></div><p class="text-xs text-gray-400">Loading offices...</p></div>
+    <div id="officeList"></div>
+  </div>
+</div>
+
+<!-- QR DISPLAY MODAL (for printing) -->
+<div id="qrDisplayModal" class="modal-overlay" onclick="if(event.target===this)closeQRDisplay()">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
+    <div class="flex items-center justify-between mb-4"><h3 class="text-base font-bold"><i class="fa-solid fa-qrcode mr-2 text-primary-600"></i>Office QR Code</h3><button onclick="closeQRDisplay()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button></div>
+    <p id="qrDispName" class="text-sm font-semibold text-gray-700 mb-1"></p>
+    <p id="qrDispAddr" class="text-[10px] text-gray-400 mb-3"></p>
+    <div class="qr-print mb-4"><div id="qrDispCode"></div><p class="text-[9px] text-gray-400 mt-2">AttendEase Check-In Point</p></div>
+    <p id="qrDispExpiry" class="text-[10px] text-amber-600 mb-3"></p>
+    <button onclick="printQRCode()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-400 text-white text-sm font-semibold shadow-md mb-2"><i class="fa-solid fa-print mr-1"></i>Print QR Code</button>
+    <button onclick="closeQRDisplay()" class="w-full py-2 rounded-xl bg-gray-100 text-gray-500 text-sm font-semibold">Close</button>
+  </div>
+</div>
+
+<!-- ADMIN OVERRIDE MODAL -->
+<div id="overrideModal" class="modal-overlay" onclick="if(event.target===this)closeOverride()">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+    <div class="flex items-center justify-between mb-5"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center"><i class="fa-solid fa-user-shield text-amber-600"></i></div><div><h3 class="text-base font-bold">Admin Override</h3><p class="text-[11px] text-gray-400">Manual check-in / check-out</p></div></div><button onclick="closeOverride()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="space-y-3 mb-4">
+      <div><label class="ipt-l">Employee</label><select id="ovEmpSelect" class="ipt"><option value="">Select Employee...</option></select></div>
+      <div><label class="ipt-l">Action</label><select id="ovAction" class="ipt"><option value="checkin">Check-In</option><option value="checkout">Check-Out</option></select></div>
+      <div><label class="ipt-l">Time (HH:MM:SS)</label><input id="ovTime" class="ipt" placeholder="09:00:00"/></div>
+      <div><label class="ipt-l">Status</label><select id="ovStatus" class="ipt"><option value="P">Present</option><option value="LP">Late Present</option><option value="A">Absent</option><option value="CL">Casual Leave</option><option value="SL">Sick Leave</option><option value="EL">Earned Leave</option><option value="PL">Paternity Leave</option><option value="HD">Half Day</option><option value="WHD">Weekly Holiday</option><option value="GHD">Govt Holiday</option><option value="ML">Maternity Leave</option></select></div>
+      <div><label class="ipt-l">Note</label><input id="ovNote" class="ipt" placeholder="Reason for override..."/></div>
+    </div>
+    <button onclick="doAdminOverride()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 text-white text-sm font-semibold shadow-md"><i class="fa-solid fa-check mr-1"></i>Apply Override</button>
+  </div>
+</div>
+
 <!-- Zoom indicator for monthly grid -->
 <div id="zoomIndicator" class="zoom-indicator"><span id="zoomLevel">100%</span></div>
 <div id="zoomCtrl" class="zoom-ctrl" style="display:none">
@@ -600,7 +694,12 @@ var CFG = {
   lastPanX: 0,
   lastPanY: 0,
   deferredPrompt: null,
-  sessionId: ''
+  sessionId: '',
+  qrScannerInstance: null,
+  qrScanAction: '',
+  offices: [],
+  portalClockInterval: null,
+  myTodayRecord: null
 };
 
 // ── Attendance Status Codes ───────────────────────────────
@@ -792,6 +891,8 @@ function updateHeader() {
   toggleEl('tabReports', canEdit);
   toggleEl('tabLeaves', canEdit);
   toggleEl('btnViewLoginHistory', isAdmin);
+  toggleEl('btnOfficeManage', isAdmin);
+  toggleEl('btnAdminOverride', isAdmin);
 }
 
 function toggleEl(id, show) {
@@ -2118,49 +2219,99 @@ function loadMyPortal() {
   var pl = document.getElementById('portalLoading');
   pl.classList.remove('hidden');
   document.getElementById('portalContent').innerHTML = '';
+  if (CFG.portalClockInterval) clearInterval(CFG.portalClockInterval);
+
   var username = CFG.user.username;
-  var promises = [apiCall('myLeaves', {username:username})];
+  var promises = [apiCall('myLeaves', {username: username})];
   if (CFG.user.empId) {
-    promises.push(apiCall('employeeProfile', {empId:CFG.user.empId}));
+    promises.push(apiCall('employeeProfile', {empId: CFG.user.empId}));
+    promises.push(apiCall('getMyTodayRecord', {empId: CFG.user.empId}));
   }
   Promise.all(promises)
   .then(function(results) {
     pl.classList.add('hidden');
     var leaveData = (results[0].success && results[0].data) ? results[0].data : {balances:{CL_Balance:0,SL_Balance:0,EL_Balance:0,PL_Balance:0}, leaves:[]};
     var profileData = results[1] ? (results[1].success ? results[1].data : null) : null;
+    CFG.myTodayRecord = results[2] ? (results[2].success ? results[2].data : null) : null;
     renderMyPortal(profileData, leaveData);
   })
-  .catch(function(e) { pl.classList.add('hidden'); toast('Failed to load portal data','error'); });
+  .catch(function(e) { pl.classList.add('hidden'); toast('Failed to load portal data', 'error'); });
 }
 
 function renderMyPortal(profile, leaveData) {
   var html = '';
-  // Profile card
-  html += '<div class="dash-card mb-5 fade-in"><div class="flex items-center gap-4 mb-4">';
+
+  // Check-In / Check-Out Card
+  html += '<div class="checkin-card mb-5 fade-in">';
+  html += '<div class="relative z-10">';
+  html += '<p class="text-primary-200 text-xs mb-1"><i class="fa-solid fa-clock mr-1"></i>Current BD Time</p>';
+  html += '<p id="portalClock" class="text-3xl font-bold mb-4">' + bdNow().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Dhaka'}) + '</p>';
+  html += '<div class="flex items-center justify-center gap-6 mb-4">';
+
+  // Check-In Button
+  var canCheckIn = true;
+  var canCheckOut = false;
   if (profile && profile.employee) {
     var emp = profile.employee;
-    var initials = (emp.Name||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
+    var initials = (emp.Name || '').split(' ').map(function(w) { return w[0]; }).join('').substring(0, 2).toUpperCase();
     var photo = emp.Image_URL;
-    html += photo ? '<img src="'+photo+'" class="w-16 h-16 rounded-2xl object-cover"/>' : '<div class="av w-16 h-16 text-xl">'+initials+'</div>';
-    html += '<div><h3 class="text-base font-bold text-gray-800">'+(emp.Name||'')+'</h3>';
-    html += '<p class="text-xs text-gray-500">'+(emp.Emp_ID||'')+' &bull; '+(emp.Designation||'')+'</p>';
-    html += '<p class="text-xs text-primary-600">'+(emp.Department||'')+'</p>';
-    html += '<p class="text-[10px] text-gray-400">Joined: '+(emp.Joining_Date||'N/A')+'</p></div>';
+    html += photo ? '<img src="' + photo + '" class="w-14 h-14 rounded-2xl object-cover mx-auto mb-3 border-2 border-white/20"/>' : '<div class="av w-14 h-14 text-base mx-auto mb-3">' + initials + '</div>';
+    html += '<h3 class="text-base font-bold">' + (emp.Name || '') + '</h3>';
+    html += '<p class="text-[10px] text-primary-200">' + (emp.Emp_ID || '') + ' &bull; ' + (emp.Department || '') + '</p>';
+  }
+  html += '</div>';
+
+  // Show check-in/out buttons based on today's record
+  var todayRecord = CFG.myTodayRecord || null;
+  var checkedIn = todayRecord && todayRecord.Check_In_Time;
+  var checkedOut = todayRecord && todayRecord.Check_Out_Time;
+
+  html += '<div class="flex items-center justify-center gap-4">';
+  if (!checkedIn) {
+    html += '<div class="text-center"><div class="ci-btn checkin mb-2" onclick="openQRScanner(\'checkin\')"><i class="fa-solid fa-right-to-bracket text-white text-3xl"></i></div><p class="text-xs font-semibold">Check In</p></div>';
   } else {
-    html += '<div class="av w-16 h-16 text-xl">'+(CFG.user.displayName||'U').substring(0,2).toUpperCase()+'</div>';
-    html += '<div><h3 class="text-base font-bold text-gray-800">'+(CFG.user.displayName||'')+'</h3>';
-    html += '<p class="text-xs text-gray-500">'+(CFG.user.role||'user')+'</p></div>';
+    html += '<div class="text-center opacity-50"><div class="ci-btn disabled mb-2"><i class="fa-solid fa-check text-white text-2xl"></i></div><p class="text-xs font-semibold text-green-300">In: ' + (todayRecord.Check_In_Time || '') + '</p></div>';
+  }
+
+  if (checkedIn && !checkedOut) {
+    html += '<div class="text-center"><div class="ci-btn checkout mb-2" onclick="openQRScanner(\'checkout\')"><i class="fa-solid fa-right-from-bracket text-white text-3xl"></i></div><p class="text-xs font-semibold">Check Out</p></div>';
+  } else if (checkedOut) {
+    html += '<div class="text-center opacity-50"><div class="ci-btn disabled mb-2"><i class="fa-solid fa-check-double text-white text-2xl"></i></div><p class="text-xs font-semibold text-blue-300">Out: ' + (todayRecord.Check_Out_Time || '') + '</p></div>';
+  }
+  html += '</div>';
+
+  if (!CFG.user.empId) {
+    html += '<p class="text-xs text-amber-300 mt-3"><i class="fa-solid fa-exclamation-triangle mr-1"></i>No Employee ID linked to your account. Contact admin.</p>';
   }
   html += '</div></div>';
+
+  // Today's record detail
+  if (todayRecord) {
+    html += '<div class="dash-card mb-5 fade-in"><h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-calendar-day mr-2 text-primary-500"></i>Today\'s Attendance</h3>';
+    html += '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2">';
+    html += '<div class="text-center p-2 rounded-xl bg-green-50"><p class="text-lg font-bold text-green-600">' + (todayRecord.Check_In_Time || '--:--') + '</p><p class="text-[10px] text-gray-400">Check In</p></div>';
+    html += '<div class="text-center p-2 rounded-xl bg-blue-50"><p class="text-lg font-bold text-blue-600">' + (todayRecord.Check_Out_Time || '--:--') + '</p><p class="text-[10px] text-gray-400">Check Out</p></div>';
+    var method = todayRecord.Check_In_Method || '';
+    var methodLabel = method === 'qr_gps' ? 'QR+GPS' : method === 'admin_override' ? 'Admin' : method || 'N/A';
+    html += '<div class="text-center p-2 rounded-xl bg-purple-50"><p class="text-lg font-bold text-purple-600">' + methodLabel + '</p><p class="text-[10px] text-gray-400">Method</p></div>';
+    html += '<div class="text-center p-2 rounded-xl bg-amber-50"><p class="text-lg font-bold text-amber-600">' + (todayRecord.Status || 'N/A') + '</p><p class="text-[10px] text-gray-400">Status</p></div>';
+    html += '</div>';
+    if (todayRecord.Check_In_Loc) {
+      html += '<p class="text-[10px] text-gray-400 mt-2"><i class="fa-solid fa-location-dot mr-1"></i>' + todayRecord.Check_In_Loc + '</p>';
+    }
+    html += '</div>';
+  }
+
   // Leave balances
   var balances = leaveData.balances || {};
   html += '<div class="dash-card mb-5 fade-in"><h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-chart-pie mr-2 text-primary-500"></i>Leave Balances</h3>';
   html += '<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">';
-  html += balCard('CL', 'Casual Leave', balances.CL_Balance||0, '#d97706');
-  html += balCard('SL', 'Sick Leave', balances.SL_Balance||0, '#ec4899');
-  html += balCard('EL', 'Earned Leave', balances.EL_Balance||0, '#3b82f6');
-  html += balCard('PL', 'Paternity Leave', balances.PL_Balance||0, '#8b5cf6');
+  html += balCard('CL', 'Casual Leave', balances.CL_Balance || 0, '#d97706');
+  html += balCard('SL', 'Sick Leave', balances.SL_Balance || 0, '#ec4899');
+  html += balCard('EL', 'Earned Leave', balances.EL_Balance || 0, '#3b82f6');
+  html += balCard('PL', 'Paternity Leave', balances.PL_Balance || 0, '#8b5cf6');
   html += '</div></div>';
+
   // Attendance summary
   if (profile && profile.summary) {
     html += '<div class="dash-card mb-5 fade-in"><h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-chart-bar mr-2 text-amber-500"></i>Attendance Summary</h3>';
@@ -2168,10 +2319,11 @@ function renderMyPortal(profile, leaveData) {
     Object.keys(profile.summary).forEach(function(st) {
       var color = SC[st] ? SC[st].bg : '#94a3b8';
       var label = SC[st] ? SC[st].label : st;
-      html += '<div class="text-center p-2 rounded-xl" style="background:'+color+'15"><p class="text-lg font-bold" style="color:'+color+'">'+profile.summary[st]+'</p><p class="text-[10px] text-gray-500">'+label+'</p></div>';
+      html += '<div class="text-center p-2 rounded-xl" style="background:' + color + '15"><p class="text-lg font-bold" style="color:' + color + '">' + profile.summary[st] + '</p><p class="text-[10px] text-gray-500">' + label + '</p></div>';
     });
     html += '</div></div>';
   }
+
   // Leave history
   var leaves = leaveData.leaves || [];
   html += '<div class="dash-card fade-in"><h3 class="text-sm font-bold text-gray-700 mb-3"><i class="fa-solid fa-clock-rotate-left mr-2 text-purple-500"></i>Leave History</h3>';
@@ -2179,13 +2331,29 @@ function renderMyPortal(profile, leaveData) {
     html += '<p class="text-xs text-gray-400 text-center py-4">No leave history.</p>';
   } else {
     leaves.slice(-20).reverse().forEach(function(l) {
-      var status = (l.Status||'Pending').toString().toLowerCase();
-      var statusColor = status==='approved'?'text-green-600':status==='rejected'?'text-red-500':'text-amber-600';
-      html += '<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><div><p class="text-xs font-semibold text-gray-700">'+(l.Leave_Type||'')+' - '+(l.Start_Date||'')+' to '+(l.End_Date||'')+'</p><p class="text-[10px] text-gray-400">'+(l.Days||1)+' day(s)'+(l.Reason?' &bull; '+l.Reason:'')+'</p></div><span class="text-xs font-semibold '+statusColor+'">'+(l.Status||'Pending')+'</span></div>';
+      var status = (l.Status || 'Pending').toString().toLowerCase();
+      var statusColor = status === 'approved' ? 'text-green-600' : status === 'rejected' ? 'text-red-500' : 'text-amber-600';
+      html += '<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><div><p class="text-xs font-semibold text-gray-700">' + (l.Leave_Type || '') + ' - ' + (l.Start_Date || '') + ' to ' + (l.End_Date || '') + '</p><p class="text-[10px] text-gray-400">' + (l.Days || 1) + ' day(s)' + (l.Reason ? ' &bull; ' + l.Reason : '') + '</p></div><span class="text-xs font-semibold ' + statusColor + '">' + (l.Status || 'Pending') + '</span></div>';
     });
   }
   html += '</div>';
+
   document.getElementById('portalContent').innerHTML = html;
+
+  // Start portal clock
+  startPortalClock();
+}
+
+function startPortalClock() {
+  if (CFG.portalClockInterval) clearInterval(CFG.portalClockInterval);
+  CFG.portalClockInterval = setInterval(function() {
+    var el = document.getElementById('portalClock');
+    if (el) {
+      el.textContent = bdNow().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Asia/Dhaka'});
+    } else {
+      clearInterval(CFG.portalClockInterval);
+    }
+  }, 1000);
 }
 
 function balCard(code, label, val, color) {
@@ -2271,6 +2439,385 @@ function installPWA() {
       document.getElementById('btnInstallPWA').classList.add('hidden');
     });
   }
+}
+
+/* ══════════════════════════════════════════════════════════
+   QR + GPS Check-In / Check-Out System
+   ══════════════════════════════════════════════════════════ */
+
+// ── QR Scanner ──────────────────────────────────────────
+function openQRScanner(action) {
+  CFG.qrScanAction = action || 'checkin';
+  document.getElementById('qrScannerModal').classList.add('open');
+  document.getElementById('qrScanStatus').classList.remove('hidden');
+  document.getElementById('qrScanResult').classList.add('hidden');
+  document.getElementById('qrScanRetryBtn').classList.add('hidden');
+  document.getElementById('qrScanLabel').textContent = action === 'checkin' ? 'Scan QR Code to Check In' : 'Scan QR Code to Check Out';
+  setTimeout(function() { startQRScan(); }, 300);
+}
+
+function closeQRScanner() {
+  document.getElementById('qrScannerModal').classList.remove('open');
+  if (CFG.qrScannerInstance) {
+    try { CFG.qrScannerInstance.stop(); } catch(e) {}
+    CFG.qrScannerInstance = null;
+  }
+}
+
+function startQRScan() {
+  document.getElementById('qrScanResult').classList.add('hidden');
+  document.getElementById('qrScanRetryBtn').classList.add('hidden');
+  document.getElementById('qrScanStatus').classList.remove('hidden');
+  document.getElementById('qrScanStatus').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Getting GPS location...';
+
+  if (CFG.qrScannerInstance) {
+    try { CFG.qrScannerInstance.stop(); } catch(e) {}
+    CFG.qrScannerInstance = null;
+  }
+  document.getElementById('qrReader').innerHTML = '';
+
+  // Get GPS first
+  getGPSCoordinates(function(lat, lng, error) {
+    if (error) {
+      document.getElementById('qrScanStatus').innerHTML = '<i class="fa-solid fa-exclamation-triangle text-amber-500 mr-1"></i>' + error;
+      return;
+    }
+    document.getElementById('qrScanStatus').innerHTML = '<i class="fa-solid fa-location-dot text-green-500 mr-1"></i>GPS OK (' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '). Scanning QR...';
+
+    CFG.qrScannerInstance = new Html5Qrcode('qrReader');
+    CFG.qrScannerInstance.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      function(qrText) {
+        onQRScanned(qrText, lat, lng);
+      },
+      function() {}
+    ).catch(function(err) {
+      document.getElementById('qrScanStatus').innerHTML = '<i class="fa-solid fa-camera-rotate mr-1 text-red-500"></i>Camera access denied. Please allow camera permission and try again.';
+      document.getElementById('qrScanRetryBtn').classList.remove('hidden');
+    });
+  });
+}
+
+function onQRScanned(qrData, lat, lng) {
+  // Stop scanner
+  if (CFG.qrScannerInstance) {
+    try { CFG.qrScannerInstance.stop(); } catch(e) {}
+    CFG.qrScannerInstance = null;
+  }
+
+  // Validate QR format
+  var parts = qrData.split(':');
+  if (parts.length < 4 || parts[0] !== 'ATDEASE') {
+    document.getElementById('qrScanResult').className = 'text-center p-4 rounded-xl mb-3 bg-red-50 text-red-600';
+    document.getElementById('qrScanResult').innerHTML = '<i class="fa-solid fa-xmark-circle text-2xl mb-2 block"></i><p class="text-sm font-bold">Invalid QR Code</p><p class="text-xs mt-1">This is not a valid AttendEase QR code.</p>';
+    document.getElementById('qrScanResult').classList.remove('hidden');
+    document.getElementById('qrScanRetryBtn').classList.remove('hidden');
+    return;
+  }
+
+  document.getElementById('qrScanStatus').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Verifying...';
+  document.getElementById('qrScanResult').classList.add('hidden');
+
+  var deviceInfo = navigator.userAgent.substring(0, 200);
+
+  if (CFG.qrScanAction === 'checkin') {
+    apiCall('selfCheckIn', {
+      action: 'selfCheckIn',
+      checkIn: {
+        empId: CFG.user.empId,
+        empName: CFG.user.displayName,
+        qrData: qrData,
+        lat: lat,
+        lng: lng,
+        deviceInfo: deviceInfo
+      }
+    }, 'POST')
+    .then(function(r) {
+      document.getElementById('qrScanStatus').classList.add('hidden');
+      if (r.success) {
+        document.getElementById('qrScanResult').className = 'text-center p-4 rounded-xl mb-3 bg-green-50 text-green-700';
+        document.getElementById('qrScanResult').innerHTML = '<i class="fa-solid fa-circle-check text-3xl mb-2 block"></i><p class="text-base font-bold">Check-In Successful!</p><p class="text-xs mt-1">' + r.message + '</p><p class="text-xs mt-1 text-green-600">Time: ' + (r.time || '') + ' | Location: ' + (r.location || '') + '</p>';
+        toast('Check-in successful at ' + (r.time || ''), 'success');
+        setTimeout(function() { closeQRScanner(); loadMyPortal(); }, 2000);
+      } else {
+        document.getElementById('qrScanResult').className = 'text-center p-4 rounded-xl mb-3 bg-red-50 text-red-600';
+        document.getElementById('qrScanResult').innerHTML = '<i class="fa-solid fa-circle-xmark text-3xl mb-2 block"></i><p class="text-sm font-bold">Check-In Failed</p><p class="text-xs mt-1">' + (r.error || 'Unknown error') + '</p>';
+        document.getElementById('qrScanRetryBtn').classList.remove('hidden');
+        toast(r.error || 'Check-in failed', 'error');
+      }
+      document.getElementById('qrScanResult').classList.remove('hidden');
+    })
+    .catch(function(e) {
+      document.getElementById('qrScanStatus').classList.add('hidden');
+      document.getElementById('qrScanResult').className = 'text-center p-4 rounded-xl mb-3 bg-red-50 text-red-600';
+      document.getElementById('qrScanResult').innerHTML = '<i class="fa-solid fa-wifi mr-1"></i>Network error. Try again.';
+      document.getElementById('qrScanResult').classList.remove('hidden');
+      document.getElementById('qrScanRetryBtn').classList.remove('hidden');
+    });
+  } else {
+    apiCall('selfCheckOut', {
+      action: 'selfCheckOut',
+      checkOut: {
+        empId: CFG.user.empId,
+        empName: CFG.user.displayName,
+        qrData: qrData,
+        lat: lat,
+        lng: lng,
+        deviceInfo: deviceInfo
+      }
+    }, 'POST')
+    .then(function(r) {
+      document.getElementById('qrScanStatus').classList.add('hidden');
+      if (r.success) {
+        document.getElementById('qrScanResult').className = 'text-center p-4 rounded-xl mb-3 bg-blue-50 text-blue-700';
+        document.getElementById('qrScanResult').innerHTML = '<i class="fa-solid fa-circle-check text-3xl mb-2 block"></i><p class="text-base font-bold">Check-Out Successful!</p><p class="text-xs mt-1">Time: ' + (r.time || '') + '</p>';
+        toast('Check-out successful at ' + (r.time || ''), 'success');
+        setTimeout(function() { closeQRScanner(); loadMyPortal(); }, 2000);
+      } else {
+        document.getElementById('qrScanResult').className = 'text-center p-4 rounded-xl mb-3 bg-red-50 text-red-600';
+        document.getElementById('qrScanResult').innerHTML = '<i class="fa-solid fa-circle-xmark text-3xl mb-2 block"></i><p class="text-sm font-bold">Check-Out Failed</p><p class="text-xs mt-1">' + (r.error || 'Unknown error') + '</p>';
+        document.getElementById('qrScanRetryBtn').classList.remove('hidden');
+        toast(r.error || 'Check-out failed', 'error');
+      }
+      document.getElementById('qrScanResult').classList.remove('hidden');
+    })
+    .catch(function(e) {
+      document.getElementById('qrScanStatus').classList.add('hidden');
+      document.getElementById('qrScanResult').className = 'text-center p-4 rounded-xl mb-3 bg-red-50 text-red-600';
+      document.getElementById('qrScanResult').innerHTML = '<i class="fa-solid fa-wifi mr-1"></i>Network error. Try again.';
+      document.getElementById('qrScanResult').classList.remove('hidden');
+      document.getElementById('qrScanRetryBtn').classList.remove('hidden');
+    });
+  }
+}
+
+// ── GPS Helper ──────────────────────────────────────────
+function getGPSCoordinates(callback) {
+  if (!navigator.geolocation) {
+    callback(0, 0, 'Geolocation is not supported by your browser.');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      callback(pos.coords.latitude, pos.coords.longitude, null);
+    },
+    function(err) {
+      var msg = 'GPS error: ';
+      switch(err.code) {
+        case 1: msg += 'Permission denied. Please enable location access.'; break;
+        case 2: msg += 'Position unavailable. Try moving to an open area.'; break;
+        case 3: msg += 'GPS timeout. Try again.'; break;
+        default: msg += 'Unknown error.';
+      }
+      callback(0, 0, msg);
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+  );
+}
+
+// ── Detect Office GPS (for admin adding office) ─────────
+function detectOfficeGPS() {
+  document.getElementById('ofcLat').value = 'Detecting...';
+  document.getElementById('ofcLng').value = 'Detecting...';
+  getGPSCoordinates(function(lat, lng, err) {
+    if (err) {
+      document.getElementById('ofcLat').value = '';
+      document.getElementById('ofcLng').value = '';
+      toast(err, 'error');
+    } else {
+      document.getElementById('ofcLat').value = lat.toFixed(6);
+      document.getElementById('ofcLng').value = lng.toFixed(6);
+      toast('GPS detected successfully!', 'success');
+    }
+  });
+}
+
+// ── Office Location Management ──────────────────────────
+function openOfficeModal() {
+  document.getElementById('officeModal').classList.add('open');
+  loadOffices();
+}
+function closeOfficeModal() { document.getElementById('officeModal').classList.remove('open'); }
+function openAddOffice() {
+  document.getElementById('addOfficeForm').classList.remove('hidden');
+  document.getElementById('ofcName').value = '';
+  document.getElementById('ofcAddr').value = '';
+  document.getElementById('ofcLat').value = '';
+  document.getElementById('ofcLng').value = '';
+  document.getElementById('ofcRadius').value = '100';
+}
+
+function loadOffices() {
+  var ol = document.getElementById('officeLoading');
+  ol.classList.remove('hidden');
+  document.getElementById('officeList').innerHTML = '';
+  apiCall('officeLocations')
+  .then(function(r) {
+    ol.classList.add('hidden');
+    CFG.offices = (r.success && r.data) ? r.data : [];
+    renderOffices();
+  })
+  .catch(function(e) { ol.classList.add('hidden'); toast('Failed to load offices', 'error'); });
+}
+
+function renderOffices() {
+  var html = '';
+  if (CFG.offices.length === 0) {
+    html = '<div class="text-center py-8 text-gray-400"><i class="fa-solid fa-building-circle-xmark text-3xl mb-3 block"></i><p class="text-sm">No office locations added.</p><p class="text-[10px] mt-1">Add an office to enable QR check-in.</p></div>';
+  } else {
+    CFG.offices.forEach(function(o) {
+      var statusClass = (o.Status || '').toString().toLowerCase() === 'active' ? 'active' : 'inactive';
+      var statusText = (o.Status || '').toString().toLowerCase() === 'active' ? 'Active' : 'Inactive';
+      html += '<div class="office-card">';
+      html += '<div class="flex items-start justify-between mb-2"><div><h4 class="text-sm font-bold text-gray-800"><span class="status-pulse ' + statusClass + '"></span>' + (o.Name || o.Loc_ID) + '</h4><p class="text-[10px] text-gray-400">' + o.Loc_ID + '</p></div><span class="badge ' + (statusClass === 'active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500') + '">' + statusText + '</span></div>';
+      html += '<p class="text-[11px] text-gray-500 mb-1"><i class="fa-solid fa-location-dot mr-1 text-primary-500"></i>' + (o.Address || 'N/A') + '</p>';
+      html += '<p class="text-[10px] text-gray-400">GPS: ' + (o.Latitude || 0) + ', ' + (o.Longitude || 0) + ' | Radius: ' + (o.Radius_m || 100) + 'm</p>';
+      html += '<p class="text-[10px] text-gray-400">QR Expiry: ' + (o.QR_Expiry || 'N/A') + '</p>';
+      html += '<div class="flex gap-2 mt-3">';
+      html += '<button onclick="showOfficeQR(\'' + o.Loc_ID + '\')" class="px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-600 text-[11px] font-semibold"><i class="fa-solid fa-qrcode mr-1"></i>View QR</button>';
+      html += '<button onclick="regenOfficeQR(\'' + o.Loc_ID + '\')" class="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-[11px] font-semibold"><i class="fa-solid fa-arrows-rotate mr-1"></i>Regen QR</button>';
+      html += '<button onclick="deleteOffice(\'' + o.Loc_ID + '\')" class="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-[11px] font-semibold ml-auto"><i class="fa-solid fa-trash mr-1"></i>Delete</button>';
+      html += '</div></div>';
+    });
+  }
+  document.getElementById('officeList').innerHTML = html;
+}
+
+function saveOffice() {
+  var name = document.getElementById('ofcName').value.trim();
+  var addr = document.getElementById('ofcAddr').value.trim();
+  var lat = document.getElementById('ofcLat').value.trim();
+  var lng = document.getElementById('ofcLng').value.trim();
+  var radius = document.getElementById('ofcRadius').value.trim();
+  if (!name || !addr) { toast('Name and address required', 'error'); return; }
+  if (!lat || !lng) { toast('Please detect GPS first', 'error'); return; }
+  apiCall('addOfficeLocation', {
+    action: 'addOfficeLocation',
+    location: { name: name, address: addr, latitude: lat, longitude: lng, radius: radius, status: 'Active' },
+    updatedBy: CFG.user.displayName
+  }, 'POST')
+  .then(function(r) {
+    if (r.success) {
+      toast('Office added!', 'success');
+      document.getElementById('addOfficeForm').classList.add('hidden');
+      loadOffices();
+    } else {
+      toast(r.error || 'Failed', 'error');
+    }
+  })
+  .catch(function(e) { toast('Failed to add office', 'error'); });
+}
+
+function deleteOffice(locId) {
+  if (!confirm('Delete this office location? This cannot be undone.')) return;
+  apiCall('deleteOfficeLocation', { action: 'deleteOfficeLocation', locId: locId, updatedBy: CFG.user.displayName }, 'POST')
+  .then(function(r) {
+    if (r.success) { toast('Office deleted', 'success'); loadOffices(); }
+    else toast(r.error || 'Failed', 'error');
+  })
+  .catch(function(e) { toast('Failed', 'error'); });
+}
+
+function showOfficeQR(locId) {
+  var office = CFG.offices.find(function(o) { return o.Loc_ID === locId; });
+  if (!office) { toast('Office not found', 'error'); return; }
+  // Generate QR data
+  var expiry = new Date(office.QR_Expiry);
+  var qrData = 'ATDEASE:' + locId + ':' + office.QR_Secret + ':' + Math.floor(expiry.getTime() / 1000);
+  document.getElementById('qrDispName').textContent = office.Name || locId;
+  document.getElementById('qrDispAddr').textContent = office.Address || '';
+  document.getElementById('qrDispExpiry').textContent = 'Valid until: ' + (office.QR_Expiry || 'N/A');
+  document.getElementById('qrDispCode').innerHTML = '';
+  new QRCode(document.getElementById('qrDispCode'), { text: qrData, width: 200, height: 200, colorDark: '#1B4332', colorLight: '#ffffff' });
+  document.getElementById('qrDisplayModal').classList.add('open');
+}
+function closeQRDisplay() { document.getElementById('qrDisplayModal').classList.remove('open'); }
+
+function regenOfficeQR(locId) {
+  if (!confirm('Regenerate QR code for this office? Old QR will become invalid.')) return;
+  apiCall('regenerateQR', { action: 'regenerateQR', locId: locId, updatedBy: CFG.user.displayName }, 'POST')
+  .then(function(r) {
+    if (r.success) {
+      toast('QR regenerated! Expiry: ' + r.qrExpiry, 'success');
+      loadOffices();
+    } else {
+      toast(r.error || 'Failed', 'error');
+    }
+  })
+  .catch(function(e) { toast('Failed', 'error'); });
+}
+
+function printQRCode() {
+  var content = document.querySelector('.qr-print');
+  if (!content) return;
+  var win = window.open('', '_blank');
+  win.document.write('<html><head><title>AttendEase QR Code</title><style>body{display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;font-family:Arial,sans-serif;background:#fff}.qr-print{padding:30px;text-align:center;border:2px solid #1B4332;border-radius:16px}</style></head><body><div class="qr-print">' + content.innerHTML + '<p style="font-size:12px;color:#666;margin-top:8px">AttendEase Check-In Point</p></div></body></html>');
+  win.document.close();
+  setTimeout(function() { win.print(); }, 500);
+}
+
+// ── Admin Override ──────────────────────────────────────
+function openOverride() {
+  if (!CFG.employees || CFG.employees.length === 0) {
+    apiCall('employees').then(function(r) {
+      CFG.employees = (r.success && r.data) ? r.data : [];
+      populateOverrideEmps();
+    });
+  } else {
+    populateOverrideEmps();
+  }
+  // Set current time
+  var now = bdNow();
+  var hh = String(now.getHours()).padStart(2, '0');
+  var mm = String(now.getMinutes()).padStart(2, '0');
+  var ss = String(now.getSeconds()).padStart(2, '0');
+  document.getElementById('ovTime').value = hh + ':' + mm + ':' + ss;
+  document.getElementById('ovNote').value = '';
+  document.getElementById('overrideModal').classList.add('open');
+}
+function closeOverride() { document.getElementById('overrideModal').classList.remove('open'); }
+
+function populateOverrideEmps() {
+  var sel = document.getElementById('ovEmpSelect');
+  sel.innerHTML = '<option value="">Select Employee...</option>';
+  CFG.employees.forEach(function(emp) {
+    sel.innerHTML += '<option value="' + emp.Emp_ID + '">' + emp.Emp_ID + ' - ' + emp.Name + '</option>';
+  });
+}
+
+function doAdminOverride() {
+  var empId = document.getElementById('ovEmpSelect').value;
+  var action = document.getElementById('ovAction').value;
+  var time = document.getElementById('ovTime').value.trim();
+  var status = document.getElementById('ovStatus').value;
+  var note = document.getElementById('ovNote').value.trim();
+  if (!empId) { toast('Select an employee', 'error'); return; }
+  if (!time) { toast('Enter time', 'error'); return; }
+
+  var apiAction = action === 'checkin' ? 'adminOverrideCheckIn' : 'adminOverrideCheckOut';
+  var empObj = CFG.employees.find(function(e) { return e.Emp_ID === empId; });
+
+  apiCall(apiAction, {
+    action: apiAction,
+    override: {
+      empId: empId,
+      empName: empObj ? empObj.Name : '',
+      time: time,
+      status: status,
+      note: note
+    },
+    updatedBy: CFG.user.displayName
+  }, 'POST')
+  .then(function(r) {
+    if (r.success) {
+      toast(r.message, 'success');
+      closeOverride();
+    } else {
+      toast(r.error || 'Failed', 'error');
+    }
+  })
+  .catch(function(e) { toast('Operation failed', 'error'); });
 }
 </script>
 </body>
