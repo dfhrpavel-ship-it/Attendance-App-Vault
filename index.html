@@ -854,8 +854,14 @@ function showDashboard() {
   document.getElementById('dashboard').classList.remove('hidden');
   applyBranding();
   updateHeader();
-  switchTab('dashboard');
-  loadDashboard();
+  // Employee: auto-redirect to My Portal
+  var role = (CFG.user.role || '').toLowerCase();
+  if (role === 'employee' || role === 'user') {
+    switchTab('myPortal');
+  } else {
+    switchTab('dashboard');
+    loadDashboard();
+  }
 }
 
 function updateHeader() {
@@ -880,19 +886,58 @@ function updateHeader() {
   } else {
     rb.className = 'role-badge hidden';
   }
-  // Show/hide admin buttons
+  // Role-based access control
   var isAdmin = (role === 'admin' || role === 'super_admin');
   var isManager = (role === 'manager');
-  var canEdit = isAdmin || isManager;
-  toggleEl('btnAddEmpHdr', canEdit);
-  toggleEl('dashActions', canEdit);
-  // Tab visibility
-  toggleEl('tabEmployees', canEdit);
-  toggleEl('tabReports', canEdit);
-  toggleEl('tabLeaves', canEdit);
-  toggleEl('btnViewLoginHistory', isAdmin);
-  toggleEl('btnOfficeManage', isAdmin);
-  toggleEl('btnAdminOverride', isAdmin);
+  var isEmployee = (role === 'employee' || role === 'user');
+
+  // Employee: only My Portal visible
+  if (isEmployee) {
+    toggleEl('tabDashboard', false);
+    toggleEl('tabDaily', false);
+    toggleEl('tabMonthly', false);
+    toggleEl('tabReports', false);
+    toggleEl('tabEmployees', false);
+    toggleEl('tabLeaves', false);
+    toggleEl('tabActivity', false);
+    toggleEl('tabMyPortal', true);
+    toggleEl('btnAddEmpHdr', false);
+    toggleEl('btnSettingsHdr', false);
+    return;
+  }
+
+  // Manager: hide Employees, Activity Log, Office, Override
+  if (isManager) {
+    toggleEl('tabDashboard', true);
+    toggleEl('tabDaily', true);
+    toggleEl('tabMonthly', true);
+    toggleEl('tabReports', true);
+    toggleEl('tabEmployees', false);
+    toggleEl('tabLeaves', true);
+    toggleEl('tabActivity', false);
+    toggleEl('tabMyPortal', true);
+    toggleEl('btnAddEmpHdr', false);
+    toggleEl('dashActions', false);
+    toggleEl('btnViewLoginHistory', false);
+    toggleEl('btnOfficeManage', false);
+    toggleEl('btnAdminOverride', false);
+    return;
+  }
+
+  // Admin: everything visible
+  toggleEl('tabDashboard', true);
+  toggleEl('tabDaily', true);
+  toggleEl('tabMonthly', true);
+  toggleEl('tabReports', true);
+  toggleEl('tabEmployees', true);
+  toggleEl('tabLeaves', true);
+  toggleEl('tabActivity', true);
+  toggleEl('tabMyPortal', true);
+  toggleEl('btnAddEmpHdr', true);
+  toggleEl('dashActions', true);
+  toggleEl('btnViewLoginHistory', true);
+  toggleEl('btnOfficeManage', true);
+  toggleEl('btnAdminOverride', true);
 }
 
 function toggleEl(id, show) {
