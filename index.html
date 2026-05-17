@@ -856,7 +856,7 @@ function showDashboard() {
   updateHeader();
   // Employee: auto-redirect to My Portal
   var role = (CFG.user.role || '').toLowerCase();
-  if (role === 'employee' || role === 'user') {
+  if (role !== 'admin' && role !== 'super_admin' && role !== 'manager') {
     switchTab('myPortal');
   } else {
     switchTab('dashboard');
@@ -872,17 +872,17 @@ function updateHeader() {
   document.getElementById('headerDateM').textContent = bdNow().toLocaleDateString('en-US', {month:'short', day:'numeric'});
   // Role badge
   var rb = document.getElementById('headerRoleBadge');
-  var role = CFG.user.role || 'user';
+  var role = (CFG.user.role || 'user').toLowerCase();
   if (role === 'admin' || role === 'super_admin') {
     rb.className = 'role-badge';
     rb.style.background = '#DCFCE7';
     rb.style.color = '#16a34a';
-    rb.innerHTML = '<i class="fa-solid fa-shield-halved"></i>' + role;
+    rb.innerHTML = '<i class="fa-solid fa-shield-halved"></i>' + (CFG.user.role || 'admin');
   } else if (role === 'manager') {
     rb.className = 'role-badge';
     rb.style.background = '#DBEAFE';
     rb.style.color = '#2563eb';
-    rb.innerHTML = '<i class="fa-solid fa-user-tie"></i>' + role;
+    rb.innerHTML = '<i class="fa-solid fa-user-tie"></i>' + (CFG.user.role || 'manager');
   } else {
     rb.className = 'role-badge hidden';
   }
@@ -1151,7 +1151,7 @@ function loadAttForDate() {
     CFG.attendanceMap = {};
     att.forEach(function(a) { CFG.attendanceMap[a.Emp_ID] = a; });
     // Manager filtering
-    if (CFG.user && CFG.user.role === 'manager' && CFG.user.department) {
+    if (CFG.user && (CFG.user.role||'').toLowerCase() === 'manager' && CFG.user.department) {
       CFG.employees = CFG.employees.filter(function(e){ return e.Department === CFG.user.department; });
     }
     if (CFG.employees.length === 0) { es.classList.remove('hidden'); }
@@ -1281,7 +1281,7 @@ function loadMonthlyData() {
     CFG.allEmployees = (results[0].success && results[0].data) ? results[0].data : [];
     var att = (results[1].success && results[1].data) ? results[1].data : [];
     // Manager filtering
-    if (CFG.user && CFG.user.role === 'manager' && CFG.user.department) {
+    if (CFG.user && (CFG.user.role||'').toLowerCase() === 'manager' && CFG.user.department) {
       CFG.allEmployees = CFG.allEmployees.filter(function(e){ return e.Department === CFG.user.department; });
     }
     CFG.monthlyData = att;
@@ -1702,7 +1702,7 @@ function renderEmpList() {
       var statusBadge = isActive
         ? '<span class="badge bg-green-50 text-green-600">Active</span>'
         : '<span class="badge bg-red-50 text-red-500">Inactive</span>';
-      var isManager = CFG.user && (CFG.user.role === 'admin' || CFG.user.role === 'super_admin' || CFG.user.role === 'manager');
+      var isManager = CFG.user && ['admin','super_admin','manager'].indexOf((CFG.user.role||'').toLowerCase()) >= 0;
       html += '<tr class="el-row border-b border-gray-50"><td class="py-2 px-2"><input type="checkbox" class="emp-chk rounded" value="'+emp.Emp_ID+'" onchange="updateBulkBar()"/></td><td class="py-2 px-2 text-[10px] text-gray-400">'+idx+'</td><td class="py-2 px-2"><div class="flex items-center gap-2 min-w-0">'+photoHtml+'<div class="min-w-0"><p class="text-xs font-semibold text-gray-700 truncate">'+(emp.Name||'')+'</p><p class="text-[10px] text-gray-400">'+(emp.Emp_ID||'')+'</p></div></div></td><td class="py-2 px-2 text-xs text-gray-500 hidden sm:table-cell">'+(emp.Designation||'-')+'</td><td class="py-2 px-2 text-xs text-gray-500 hidden md:table-cell">'+(emp.Department||'-')+'</td><td class="py-2 px-2 text-xs text-gray-500 hidden lg:table-cell">'+(emp.Category||'-')+'</td><td class="py-2 px-2 text-xs text-gray-500 hidden lg:table-cell">'+(emp.Shift||'-')+'</td><td class="py-2 px-2 text-center">'+statusBadge+'</td><td class="py-2 px-2 text-center no-print"><div class="flex items-center justify-center gap-1">';
       if (canViewProfiles()) {
         html += '<button onclick="viewEmpProfile(\''+emp.Emp_ID+'\')" class="w-7 h-7 rounded-lg hover:bg-green-50 flex items-center justify-center text-green-500" title="View Profile"><i class="fa-solid fa-user text-[10px]"></i></button>';
@@ -2150,7 +2150,7 @@ function renderLeaves() {
       if (l.Reason) html += '<p class="text-xs text-gray-400 mt-1"><i class="fa-solid fa-comment mr-1"></i>'+(l.Reason||'')+'</p>';
       if (l.Comments) html += '<p class="text-xs text-primary-500 mt-0.5"><i class="fa-solid fa-reply mr-1"></i>'+(l.Comments||'')+'</p>';
       html += '</div>';
-      var isAdmin = CFG.user && (CFG.user.role === 'admin' || CFG.user.role === 'super_admin' || CFG.user.role === 'manager');
+      var isAdmin = CFG.user && ['admin','super_admin','manager'].indexOf((CFG.user.role||'').toLowerCase()) >= 0;
       if (isAdmin && status === 'pending') {
         html += '<div class="flex gap-1 shrink-0">';
         html += '<button onclick="openApproveLeave(\''+l.Leave_ID+'\',\''+(l.Emp_Name||'')+'\',\''+(l.Leave_Type||'')+'\',\''+(l.Start_Date||'')+'\',\''+(l.End_Date||'')+'\')" class="px-2 py-1 rounded-lg bg-green-50 hover:bg-green-100 text-green-600 text-[10px] font-semibold"><i class="fa-solid fa-check"></i></button>';
