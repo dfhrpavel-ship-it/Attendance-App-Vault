@@ -942,7 +942,7 @@ function updateHeader() {
 
 function toggleEl(id, show) {
   var el = document.getElementById(id);
-  if (el) el.style.display = show ? '' : 'none';
+  if (el) el.classList.toggle('hidden', !show);
 }
 
 // ── Tab Navigation ───────────────────────────────────────
