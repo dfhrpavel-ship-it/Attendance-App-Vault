@@ -411,7 +411,7 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
     <hr class="my-4 border-gray-100">
     <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-shield-halved mr-1 text-primary-500"></i>Device Management <span class="badge bg-primary-50 text-primary-600 ml-1">Admin</span></h4>
     <button id="btnViewLoginHistory" onclick="openDeviceModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3"><i class="fa-solid fa-laptop mr-1"></i>View Login History</button>
-    <button id="btnInstallPWA" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3 hidden" onclick="installPWA()"><i class="fa-solid fa-download mr-1"></i>Install App</button>
+    <button id="btnInstallPWA" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3" onclick="installPWA()"><i class="fa-solid fa-download mr-1"></i>Install App (Add to Home Screen)</button>
     <button id="btnOfficeManage" onclick="openOfficeModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3 hidden"><i class="fa-solid fa-building mr-1"></i>Manage Office Locations</button>
     <button id="btnAdminOverride" onclick="openOverride()" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3 hidden"><i class="fa-solid fa-user-shield mr-1"></i>Admin Override Check-In/Out</button>
     <hr class="my-4 border-gray-100">
@@ -633,6 +633,88 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
     <p id="qrDispExpiry" class="text-[10px] text-amber-600 mb-3"></p>
     <button onclick="printQRCode()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary-500 to-primary-400 text-white text-sm font-semibold shadow-md mb-2"><i class="fa-solid fa-print mr-1"></i>Print QR Code</button>
     <button onclick="closeQRDisplay()" class="w-full py-2 rounded-xl bg-gray-100 text-gray-500 text-sm font-semibold">Close</button>
+  </div>
+</div>
+
+<!-- INSTALL APP HELP MODAL -->
+<div id="installHelpModal" class="modal-overlay" onclick="if(event.target===this)closeInstallHelp()">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[85vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-base font-bold text-gray-800"><i class="fa-solid fa-mobile-screen-button mr-2 text-primary-500"></i>Install AttendEase App</h3>
+      <button onclick="closeInstallHelp()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Android -->
+    <div class="mb-5">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-2xl">🤖</span>
+        <h4 class="text-sm font-bold text-gray-700">Android (Chrome)</h4>
+      </div>
+      <div class="bg-gray-50 rounded-xl p-4 space-y-3">
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">1</span>
+          <p class="text-xs text-gray-600">Chrome-এ AttendEase ওপেন করুন</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">2</span>
+          <p class="text-xs text-gray-600">উপরে ডান কোণে <b>⋮</b> (তিন ডট) মেনুতে ক্লিক করুন</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">3</span>
+          <p class="text-xs text-gray-600"><b>"Add to Home Screen"</b> বা <b>"Install App"</b> অপশনে ক্লিক করুন</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">4</span>
+          <p class="text-xs text-gray-600"><b>"Install"</b> বাটনে ক্লিক করুন — অ্যাপ তৈরি!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- iPhone -->
+    <div class="mb-5">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-2xl">🍎</span>
+        <h4 class="text-sm font-bold text-gray-700">iPhone (Safari)</h4>
+      </div>
+      <div class="bg-gray-50 rounded-xl p-4 space-y-3">
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">1</span>
+          <p class="text-xs text-gray-600"><b>Safari</b>-এ AttendEase ওপেন করুন (Chrome-এ কাজ করবে না)</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">2</span>
+          <p class="text-xs text-gray-600">নিচের <b>Share</b> বাটনে ক্লিক করুন <span class="inline-block">↑</span></p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">3</span>
+          <p class="text-xs text-gray-600"><b>"Add to Home Screen"</b> অপশনে ক্লিক করুন</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">4</span>
+          <p class="text-xs text-gray-600">উপরে ডান কোণে <b>"Add"</b> বাটনে ক্লিক করুন</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop -->
+    <div class="mb-3">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-2xl">💻</span>
+        <h4 class="text-sm font-bold text-gray-700">Desktop (Chrome / Edge)</h4>
+      </div>
+      <div class="bg-gray-50 rounded-xl p-4 space-y-3">
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">1</span>
+          <p class="text-xs text-gray-600">Address bar-এর ডান কোণে <b>Install icon</b> (⊕) দেখালে ক্লিক করুন</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">2</span>
+          <p class="text-xs text-gray-600">না থাকলে: <b>⋮</b> মেনু → <b>"Install AttendEase"</b> অপশনে ক্লিক করুন</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-[10px] text-gray-400 text-center mt-4">Install করার পর অ্যাপ অটোমেটিক standalone mode-এ খুলবে — browser bar থাকবে না।</p>
   </div>
 </div>
 
@@ -2500,8 +2582,13 @@ function installPWA() {
       CFG.deferredPrompt = null;
       document.getElementById('btnInstallPWA').classList.add('hidden');
     });
+    return;
   }
+  // GAS limitation: SW MIME type not supported, so show manual instructions
+  document.getElementById('installHelpModal').classList.add('open');
 }
+
+function closeInstallHelp() { document.getElementById('installHelpModal').classList.remove('open'); }
 
 /* ══════════════════════════════════════════════════════════
    QR + GPS Check-In / Check-Out System
