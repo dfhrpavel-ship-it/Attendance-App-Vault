@@ -8,7 +8,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="AttendEase"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="application-name" content="AttendEase"/>
 <link rel="manifest" id="pwaManifest"/>
+<link rel="apple-touch-icon" id="appleTouchIcon"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -2473,10 +2476,20 @@ function closeDD(e) {
   var url = localStorage.getItem('gasUrl') || '';
   if (url) {
     document.getElementById('pwaManifest').href = url + '?action=manifest&url=' + encodeURIComponent(url);
+    // Set apple-touch-icon for iOS home screen
+    document.getElementById('appleTouchIcon').href = url + '?action=icon&size=180';
+    // Service Worker for offline & standalone support
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register(url + '?action=sw').catch(function(){});
+      navigator.serviceWorker.register(url + '?action=sw', {scope: '/'}).catch(function(){});
     }
   }
+  // Listen for install prompt (Chrome/Android)
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    CFG.deferredPrompt = e;
+    var btn = document.getElementById('btnInstallPWA');
+    if (btn) btn.classList.remove('hidden');
+  });
 })();
 
 function installPWA() {
