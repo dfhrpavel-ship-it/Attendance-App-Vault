@@ -719,6 +719,18 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
       <button onclick="closeRoleModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <p class="text-[10px] text-gray-400 mb-3">Super Admin only. Define which features each role can access.</p>
+
+    <!-- Add New Role Form -->
+    <div class="p-3 bg-gradient-to-r from-primary-50 to-primary-100/50 rounded-xl mb-4 border border-primary-200/50">
+      <h4 class="text-xs font-bold text-primary-700 mb-2"><i class="fa-solid fa-plus-circle mr-1"></i>Add New Role</h4>
+      <div class="grid grid-cols-2 gap-2 mb-2">
+        <div><label class="ipt-l">Role Name *</label><input id="newRoleName" class="ipt" placeholder="e.g. team_lead" style="font-size:12px;padding:7px 10px"/></div>
+        <div><label class="ipt-l">Description</label><input id="newRoleDesc" class="ipt" placeholder="Optional" style="font-size:12px;padding:7px 10px"/></div>
+      </div>
+      <div id="newRolePermGrid" class="flex flex-wrap gap-1 mb-2"></div>
+      <button onclick="addNewRole()" class="w-full py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-[11px] font-semibold transition-colors"><i class="fa-solid fa-plus mr-1"></i>Create Role</button>
+    </div>
+
     <div id="roleLoading" class="text-center py-4 hidden"><span class="spinner"></span></div>
     <div id="roleList" class="space-y-3"></div>
   </div>
@@ -873,7 +885,7 @@ var CHART_COLORS = ['#22c55e','#ef4444','#f59e0b','#3b82f6','#8b5cf6','#ec4899',
   });
 })();
 
-// ── API Helper (JSONP) ───────────────────────────────────
+// ── API Helper (JSONP with fetch fallback) ────────────────
 function apiCall(action, params, method) {
   return new Promise(function(resolve, reject) {
     if (!CFG.gasUrl) { reject({error:'Backend URL not configured.'}); return; }
@@ -882,20 +894,45 @@ function apiCall(action, params, method) {
       fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(params)})
       .then(function(r){ return r.json(); }).then(resolve).catch(reject);
     } else {
-      var cbName = 'aeCb'+Date.now()+Math.random().toString(36).substr(2,4);
-      var sep = url.indexOf('?') > -1 ? '&' : '?';
       var p = params || {};
       p.action = action;
-      p.callback = cbName;
       var qs = Object.keys(p).map(function(k){ return encodeURIComponent(k)+'='+encodeURIComponent(p[k]); }).join('&');
+      var sep = url.indexOf('?') > -1 ? '&' : '?';
       var fullUrl = url + sep + qs;
-      var script = document.createElement('script');
-      var timeout = setTimeout(function(){ cleanup(); reject({error:'Request timeout'}); }, 30000);
-      window[cbName] = function(data) { clearTimeout(timeout); cleanup(); resolve(data); };
-      script.src = fullUrl;
-      script.onerror = function(){ clearTimeout(timeout); cleanup(); reject({error:'Network error'}); };
-      document.head.appendChild(script);
-      function cleanup() { delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
+      // If page is served from the same GAS origin, use fetch (faster, more reliable)
+      // Otherwise use JSONP script tag (bypasses CORS)
+      var sameOrigin = false;
+      try {
+        var pageOrigin = window.location.origin;
+        var apiOrigin = new URL(fullUrl).origin;
+        sameOrigin = (pageOrigin === apiOrigin);
+      } catch(e) {}
+      if (sameOrigin) {
+        fetch(fullUrl)
+        .then(function(r){ return r.text(); })
+        .then(function(text){
+          var cbMatch = text.match(/^([a-zA-Z_$][\w$]*)\s*\(/);
+          if (cbMatch) {
+            var jsonStr = text.substring(cbMatch[0].length);
+            if (jsonStr.endsWith(')')) jsonStr = jsonStr.slice(0, -1);
+            try { resolve(JSON.parse(jsonStr)); } catch(e) { reject({error:'Parse error'}); }
+          } else {
+            try { resolve(JSON.parse(text)); } catch(e) { reject({error:'Parse error'}); }
+          }
+        })
+        .catch(function(){ reject({error:'Request timeout'}); });
+      } else {
+        // Cross-origin: JSONP via script tag
+        var cbName = 'aeCb'+Date.now()+Math.random().toString(36).substr(2,4);
+        var jsonpUrl = fullUrl + '&callback=' + cbName;
+        var script = document.createElement('script');
+        var timeout = setTimeout(function(){ cleanup(); reject({error:'Request timeout'}); }, 30000);
+        window[cbName] = function(data) { clearTimeout(timeout); cleanup(); resolve(data); };
+        script.src = jsonpUrl;
+        script.onerror = function(){ clearTimeout(timeout); cleanup(); reject({error:'Network error'}); };
+        document.head.appendChild(script);
+        function cleanup() { delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
+      }
     }
   });
 }
@@ -2749,8 +2786,55 @@ function deleteNotice(id) {
 /* ══════════════════════════════════════════════════════════
    ROLE & PERMISSIONS MANAGEMENT
    ══════════════════════════════════════════════════════════ */
-function openRoleModal() { document.getElementById('roleModal').classList.add('open'); loadRoles(); }
+function openRoleModal() {
+  document.getElementById('roleModal').classList.add('open');
+  buildNewRolePermGrid();
+  loadRoles();
+}
 function closeRoleModal() { document.getElementById('roleModal').classList.remove('open'); }
+function buildNewRolePermGrid() {
+  var permLabels = {dashboard:'Dashboard',daily:'Daily Attendance',monthly:'Monthly View',reports:'Reports',employees:'Employees',leaves:'Leaves',activity:'Activity Log',myPortal:'My Portal',settings:'Settings',offices:'Office Locations',override:'Admin Override',departments:'Departments',shifts:'Shifts',notices:'Notices',roles:'Roles & Permissions',profiles:'Employee Profiles'};
+  var html = '';
+  Object.keys(permLabels).forEach(function(p) {
+    html += '<label class="flex items-center gap-1 text-[10px] cursor-pointer px-1.5 py-0.5 rounded bg-gray-100 text-gray-400"><input type="checkbox" data-newperm="'+p+'" onchange="toggleNewPermStyle(this)" class="rounded accent-green-600"/> '+permLabels[p]+'</label>';
+  });
+  document.getElementById('newRolePermGrid').innerHTML = html;
+}
+function toggleNewPermStyle(cb) {
+  var label = cb.parentElement;
+  if (cb.checked) { label.classList.add('bg-primary-50','text-primary-600'); label.classList.remove('bg-gray-100','text-gray-400'); }
+  else { label.classList.remove('bg-primary-50','text-primary-600'); label.classList.add('bg-gray-100','text-gray-400'); }
+}
+function addNewRole() {
+  var name = (document.getElementById('newRoleName').value || '').trim();
+  var desc = (document.getElementById('newRoleDesc').value || '').trim();
+  if (!name) { toast('Enter a role name','error'); return; }
+  if (!/^[a-z_][a-z0-9_]*$/i.test(name)) { toast('Use only letters, numbers, underscores (no spaces)','error'); return; }
+  var cbs = document.querySelectorAll('[data-newperm]');
+  var perms = [];
+  cbs.forEach(function(cb) { if(cb.checked) perms.push(cb.dataset.newperm); });
+  if (perms.length === 0) { toast('Select at least one permission','error'); return; }
+  apiCall('addRole', {roleName:name, permissions:perms.join(','), description:desc, updatedBy:(CFG.user&&CFG.user.displayName)||'Super Admin'}, 'POST')
+  .then(function(r) {
+    if(r.success) {
+      toast(r.message,'success');
+      document.getElementById('newRoleName').value = '';
+      document.getElementById('newRoleDesc').value = '';
+      cbs.forEach(function(cb) { cb.checked = false; toggleNewPermStyle(cb); });
+      loadRoles();
+    } else { toast(r.error||'Failed','error'); }
+  }).catch(function() { toast('Failed to add role','error'); });
+}
+function deleteRole(roleName) {
+  var protectedRoles = ['super_admin','superadmin','admin','manager','employee'];
+  if (protectedRoles.indexOf(roleName.toLowerCase()) >= 0) { toast('Cannot delete built-in role','error'); return; }
+  if (!confirm('Delete role "' + roleName + '"? This cannot be undone.')) return;
+  apiCall('deleteRole', {roleName:roleName, updatedBy:(CFG.user&&CFG.user.displayName)||'Super Admin'}, 'POST')
+  .then(function(r) {
+    if(r.success) { toast(r.message,'success'); loadRoles(); }
+    else { toast(r.error||'Failed','error'); }
+  }).catch(function() { toast('Failed to delete role','error'); });
+}
 function loadRoles() {
   document.getElementById('roleLoading').classList.remove('hidden');
   apiCall('roles').then(function(r) {
@@ -2761,16 +2845,24 @@ function loadRoles() {
     var permLabels = {dashboard:'Dashboard',daily:'Daily Attendance',monthly:'Monthly View',reports:'Reports',employees:'Employees',leaves:'Leaves',activity:'Activity Log',myPortal:'My Portal',settings:'Settings',offices:'Office Locations',override:'Admin Override',departments:'Departments',shifts:'Shifts',notices:'Notices',roles:'Roles & Permissions',profiles:'Employee Profiles'};
     var html = '';
     r.data.forEach(function(role) {
+      var roleName = role.Role_Name || role.Role || '';
       var perms = (role.Permissions || '').split(',').map(function(p){return p.trim();});
+      var isSuperAdmin = roleName.toLowerCase() === 'super_admin';
       html += '<div class="p-3 bg-gray-50 rounded-xl">';
-      html += '<div class="flex items-center justify-between mb-2"><p class="text-xs font-bold text-gray-700">'+(role.Role_Name||'')+'</p><span class="text-[9px] text-gray-400">'+(role.Description||'')+'</span></div>';
+      html += '<div class="flex items-center justify-between mb-2"><p class="text-xs font-bold text-gray-700">'+roleName+'</p><span class="text-[9px] text-gray-400">'+(role.Description||'')+'</span></div>';
       html += '<div class="flex flex-wrap gap-1 mb-2">';
       allPerms.forEach(function(p) {
         var has = perms.indexOf(p) >= 0;
-        html += '<label class="flex items-center gap-1 text-[10px] cursor-pointer px-1.5 py-0.5 rounded '+(has?'bg-primary-50 text-primary-600':'bg-gray-100 text-gray-400')+'"><input type="checkbox" '+(has?'checked':'')+' data-role="'+(role.Role_Name||'')+'" data-perm="'+p+'" onchange="updateRolePerm(this)" class="rounded accent-green-600" '+(role.Role_Name==='super_admin'&&p==='roles'?'disabled':'')+'/> '+permLabels[p]+'</label>';
+        html += '<label class="flex items-center gap-1 text-[10px] cursor-pointer px-1.5 py-0.5 rounded '+(has?'bg-primary-50 text-primary-600':'bg-gray-100 text-gray-400')+'"><input type="checkbox" '+(has?'checked':'')+' data-role="'+roleName+'" data-perm="'+p+'" onchange="updateRolePerm(this)" class="rounded accent-green-600" '+(isSuperAdmin&&p==='roles'?'disabled':'')+'/> '+permLabels[p]+'</label>';
       });
       html += '</div>';
-      html += '<button onclick="saveRolePerms(\''+(role.Role_Name||'')+'\')" class="w-full py-1.5 rounded-lg bg-primary-500 text-white text-[10px] font-semibold"><i class="fa-solid fa-save mr-1"></i>Save Permissions</button>';
+      html += '<div class="flex gap-2">';
+      html += '<button onclick="saveRolePerms(\''+roleName+'\')" class="flex-1 py-1.5 rounded-lg bg-primary-500 text-white text-[10px] font-semibold"><i class="fa-solid fa-save mr-1"></i>Save</button>';
+      var builtIn = ['super_admin','superadmin','admin','manager','employee'];
+      if (builtIn.indexOf(roleName.toLowerCase()) < 0) {
+        html += '<button onclick="deleteRole(\''+roleName+'\')" class="py-1.5 px-3 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-[10px] font-semibold"><i class="fa-solid fa-trash"></i></button>';
+      }
+      html += '</div>';
       html += '</div>';
     });
     list.innerHTML = html;
