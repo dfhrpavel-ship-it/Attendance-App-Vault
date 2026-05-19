@@ -8,10 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="AttendEase"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="application-name" content="AttendEase"/>
 <link rel="manifest" id="pwaManifest"/>
-<link rel="apple-touch-icon" id="appleTouchIcon"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -139,7 +136,6 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
       <div id="loginError" class="text-red-300 text-xs hidden rounded-lg bg-red-500/15 px-3 py-2"><i class="fa-solid fa-circle-exclamation mr-1"></i><span id="loginErrorMsg"></span></div>
       <button type="submit" id="loginBtn" onclick="handleLogin()" class="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary-300 via-primary-400 to-primary-300 text-white hover:from-primary-400 hover:via-primary-500 hover:to-primary-400 transition-all shadow-lg active:scale-[.98] flex items-center justify-center gap-2"><span>Sign In</span><i class="fa-solid fa-arrow-right-to-bracket"></i></button>
     </form>
-    <div class="mt-5 text-center"><button onclick="openSettings()" class="text-primary-200/60 hover:text-primary-100 text-xs"><i class="fa-solid fa-gear mr-1"></i>Configure Backend URL</button></div>
   </div>
 </div>
 
@@ -397,10 +393,8 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
 <!-- SETTINGS MODAL -->
 <div id="settingsModal" class="modal-overlay" onclick="if(event.target===this)closeSettings()">
   <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto">
-    <div class="flex items-center justify-between mb-5"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center"><i class="fa-solid fa-gear text-primary-600"></i></div><div><h3 class="text-base font-bold">Settings</h3><p class="text-[11px] text-gray-400">Backend connection</p></div></div><button onclick="closeSettings()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button></div>
-    <div class="mb-4"><label class="ipt-l">GAS Web App URL</label><input id="gasUrl" class="ipt" placeholder="https://script.google.com/macros/s/xxx/exec"/></div>
-    <button onclick="testConn()" class="w-full mt-2 py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold"><i class="fa-solid fa-wifi mr-1"></i>Test Connection</button>
-    <div id="connStatus" class="mt-3 hidden"><div id="connMsg" class="text-xs rounded-lg px-3 py-2"></div></div>
+    <div class="flex items-center justify-between mb-5"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center"><i class="fa-solid fa-gear text-primary-600"></i></div><div><h3 class="text-base font-bold">Settings</h3><p class="text-[11px] text-gray-400">Configuration</p></div></div><button onclick="closeSettings()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button></div>
+
     <hr class="my-4 border-gray-100">
     <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-palette mr-1 text-primary-500"></i>Branding & Customization</h4>
     <div class="mb-3"><label class="ipt-l">Company Name</label><input id="brandName" class="ipt" placeholder="AttendEase"/></div>
@@ -408,10 +402,15 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
     <div class="mb-3"><label class="ipt-l">Company Phone</label><input id="brandPhone" class="ipt" placeholder="+880 1XXX-XXXXXX"/></div>
     <div class="mb-3"><label class="ipt-l">Company Logo URL</label><input id="brandLogo" class="ipt" placeholder="https://..." oninput="previewBrandLogo()"/><div id="brandLogoPreview" class="mt-2 hidden"><img id="brandLogoImg" class="w-12 h-12 rounded-xl object-contain border border-gray-200"/></div></div>
     <label class="mb-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-50 hover:bg-primary-100 text-primary-600 text-[11px] font-semibold cursor-pointer"><i class="fa-solid fa-upload"></i><span>Upload Logo</span><input type="file" accept="image/*" class="hidden" onchange="uploadBrandLogo(this)"/></label>
+    <p class="text-[10px] text-gray-400 mt-1"><i class="fa-solid fa-info-circle mr-1"></i>Changes apply globally for all users after saving.</p>
     <hr class="my-4 border-gray-100">
     <h4 class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-shield-halved mr-1 text-primary-500"></i>Device Management <span class="badge bg-primary-50 text-primary-600 ml-1">Admin</span></h4>
     <button id="btnViewLoginHistory" onclick="openDeviceModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3"><i class="fa-solid fa-laptop mr-1"></i>View Login History</button>
-    <button id="btnInstallPWA" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3" onclick="installPWA()"><i class="fa-solid fa-download mr-1"></i>Install App (Add to Home Screen)</button>
+    <button id="btnInstallPWA" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3 hidden" onclick="installPWA()"><i class="fa-solid fa-download mr-1"></i>Install App</button>
+    <button id="btnDeptManage" onclick="openDeptModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3 hidden"><i class="fa-solid fa-sitemap mr-1"></i>Manage Departments</button>
+    <button id="btnShiftManage" onclick="openShiftModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3 hidden"><i class="fa-solid fa-clock mr-1"></i>Manage Shifts</button>
+    <button id="btnNoticeManage" onclick="openNoticeModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3 hidden"><i class="fa-solid fa-bullhorn mr-1"></i>Manage Notices</button>
+    <button id="btnRoleManage" onclick="openRoleModal()" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3 hidden"><i class="fa-solid fa-user-shield mr-1"></i>Role & Permissions <span class="badge bg-red-50 text-red-500 ml-1">Super Admin</span></button>
     <button id="btnOfficeManage" onclick="openOfficeModal()" class="w-full py-2.5 rounded-xl border-2 border-primary-200 text-primary-600 text-sm font-semibold mb-3 hidden"><i class="fa-solid fa-building mr-1"></i>Manage Office Locations</button>
     <button id="btnAdminOverride" onclick="openOverride()" class="w-full py-2.5 rounded-xl border-2 border-amber-200 text-amber-600 text-sm font-semibold mb-3 hidden"><i class="fa-solid fa-user-shield mr-1"></i>Admin Override Check-In/Out</button>
     <hr class="my-4 border-gray-100">
@@ -636,85 +635,92 @@ body{font-family:'Poppins',sans-serif;background:#F5F6FA;color:#1a1a2e;overflow-
   </div>
 </div>
 
-<!-- INSTALL APP HELP MODAL -->
-<div id="installHelpModal" class="modal-overlay" onclick="if(event.target===this)closeInstallHelp()">
+<!-- DEPARTMENT MANAGEMENT MODAL -->
+<div id="deptModal" class="modal-overlay" onclick="if(event.target===this)closeDeptModal()">
   <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[85vh] overflow-y-auto">
     <div class="flex items-center justify-between mb-5">
-      <h3 class="text-base font-bold text-gray-800"><i class="fa-solid fa-mobile-screen-button mr-2 text-primary-500"></i>Install AttendEase App</h3>
-      <button onclick="closeInstallHelp()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button>
+      <h3 class="text-base font-bold"><i class="fa-solid fa-sitemap mr-2 text-primary-500"></i>Manage Departments</h3>
+      <button onclick="closeDeptModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button>
     </div>
-
-    <!-- Android -->
-    <div class="mb-5">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-2xl">🤖</span>
-        <h4 class="text-sm font-bold text-gray-700">Android (Chrome)</h4>
-      </div>
-      <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-        <div class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">1</span>
-          <p class="text-xs text-gray-600">Chrome-এ AttendEase ওপেন করুন</p>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">2</span>
-          <p class="text-xs text-gray-600">উপরে ডান কোণে <b>⋮</b> (তিন ডট) মেনুতে ক্লিক করুন</p>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">3</span>
-          <p class="text-xs text-gray-600"><b>"Add to Home Screen"</b> বা <b>"Install App"</b> অপশনে ক্লিক করুন</p>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">4</span>
-          <p class="text-xs text-gray-600"><b>"Install"</b> বাটনে ক্লিক করুন — অ্যাপ তৈরি!</p>
-        </div>
+    <button onclick="toggleDeptForm()" class="w-full py-2 rounded-xl bg-primary-50 text-primary-600 text-xs font-semibold mb-3"><i class="fa-solid fa-plus mr-1"></i>Add Department</button>
+    <div id="deptForm" class="hidden mb-3 p-3 bg-gray-50 rounded-xl space-y-2">
+      <input id="deptName" class="w-full px-3 py-2 rounded-lg border text-xs" placeholder="Department Name"/>
+      <input id="deptHead" class="w-full px-3 py-2 rounded-lg border text-xs" placeholder="Department Head (optional)"/>
+      <div class="flex gap-2">
+        <button onclick="saveDept()" class="flex-1 py-2 rounded-lg bg-primary-500 text-white text-xs font-semibold">Save</button>
+        <button onclick="toggleDeptForm()" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-600 text-xs">Cancel</button>
       </div>
     </div>
+    <div id="deptLoading" class="text-center py-4 hidden"><span class="spinner"></span></div>
+    <div id="deptList" class="space-y-2"></div>
+  </div>
+</div>
 
-    <!-- iPhone -->
-    <div class="mb-5">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-2xl">🍎</span>
-        <h4 class="text-sm font-bold text-gray-700">iPhone (Safari)</h4>
+<!-- SHIFT MANAGEMENT MODAL -->
+<div id="shiftModal" class="modal-overlay" onclick="if(event.target===this)closeShiftModal()">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[85vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-base font-bold"><i class="fa-solid fa-clock mr-2 text-primary-500"></i>Manage Shifts</h3>
+      <button onclick="closeShiftModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <button onclick="toggleShiftForm()" class="w-full py-2 rounded-xl bg-primary-50 text-primary-600 text-xs font-semibold mb-3"><i class="fa-solid fa-plus mr-1"></i>Add Shift</button>
+    <div id="shiftForm" class="hidden mb-3 p-3 bg-gray-50 rounded-xl space-y-2">
+      <input id="shiftName" class="w-full px-3 py-2 rounded-lg border text-xs" placeholder="Shift Name (e.g. Morning)"/>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="shiftStart" type="time" class="px-3 py-2 rounded-lg border text-xs" value="09:00"/>
+        <input id="shiftEnd" type="time" class="px-3 py-2 rounded-lg border text-xs" value="18:00"/>
       </div>
-      <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-        <div class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">1</span>
-          <p class="text-xs text-gray-600"><b>Safari</b>-এ AttendEase ওপেন করুন (Chrome-এ কাজ করবে না)</p>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">2</span>
-          <p class="text-xs text-gray-600">নিচের <b>Share</b> বাটনে ক্লিক করুন <span class="inline-block">↑</span></p>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">3</span>
-          <p class="text-xs text-gray-600"><b>"Add to Home Screen"</b> অপশনে ক্লিক করুন</p>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">4</span>
-          <p class="text-xs text-gray-600">উপরে ডান কোণে <b>"Add"</b> বাটনে ক্লিক করুন</p>
-        </div>
+      <input id="shiftLate" type="number" class="w-full px-3 py-2 rounded-lg border text-xs" placeholder="Late threshold (minutes)" value="15"/>
+      <div class="flex gap-2">
+        <button onclick="saveShift()" class="flex-1 py-2 rounded-lg bg-primary-500 text-white text-xs font-semibold">Save</button>
+        <button onclick="toggleShiftForm()" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-600 text-xs">Cancel</button>
       </div>
     </div>
+    <div id="shiftLoading" class="text-center py-4 hidden"><span class="spinner"></span></div>
+    <div id="shiftList" class="space-y-2"></div>
+  </div>
+</div>
 
-    <!-- Desktop -->
-    <div class="mb-3">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-2xl">💻</span>
-        <h4 class="text-sm font-bold text-gray-700">Desktop (Chrome / Edge)</h4>
-      </div>
-      <div class="bg-gray-50 rounded-xl p-4 space-y-3">
-        <div class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">1</span>
-          <p class="text-xs text-gray-600">Address bar-এর ডান কোণে <b>Install icon</b> (⊕) দেখালে ক্লিক করুন</p>
-        </div>
-        <div class="flex items-start gap-3">
-          <span class="w-6 h-6 rounded-full bg-primary-500 text-white text-xs flex items-center justify-center font-bold shrink-0 mt-0.5">2</span>
-          <p class="text-xs text-gray-600">না থাকলে: <b>⋮</b> মেনু → <b>"Install AttendEase"</b> অপশনে ক্লিক করুন</p>
-        </div>
+<!-- NOTICE MANAGEMENT MODAL -->
+<div id="noticeModal" class="modal-overlay" onclick="if(event.target===this)closeNoticeModal()">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[85vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-base font-bold"><i class="fa-solid fa-bullhorn mr-2 text-primary-500"></i>Manage Notices</h3>
+      <button onclick="closeNoticeModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <button onclick="toggleNoticeForm()" class="w-full py-2 rounded-xl bg-primary-50 text-primary-600 text-xs font-semibold mb-3"><i class="fa-solid fa-plus mr-1"></i>Post New Notice</button>
+    <div id="noticeForm" class="hidden mb-3 p-3 bg-gray-50 rounded-xl space-y-2">
+      <input id="noticeTitle" class="w-full px-3 py-2 rounded-lg border text-xs" placeholder="Notice Title"/>
+      <textarea id="noticeContent" rows="3" class="w-full px-3 py-2 rounded-lg border text-xs" placeholder="Notice content..."></textarea>
+      <select id="noticePriority" class="w-full px-3 py-2 rounded-lg border text-xs">
+        <option value="normal">Normal</option>
+        <option value="important">Important</option>
+        <option value="urgent">Urgent</option>
+      </select>
+      <select id="noticeTarget" class="w-full px-3 py-2 rounded-lg border text-xs">
+        <option value="all">All Employees</option>
+        <option value="admin">Admin & Managers</option>
+      </select>
+      <div class="flex gap-2">
+        <button onclick="saveNotice()" class="flex-1 py-2 rounded-lg bg-primary-500 text-white text-xs font-semibold">Post</button>
+        <button onclick="toggleNoticeForm()" class="px-4 py-2 rounded-lg bg-gray-200 text-gray-600 text-xs">Cancel</button>
       </div>
     </div>
+    <div id="noticeLoading" class="text-center py-4 hidden"><span class="spinner"></span></div>
+    <div id="noticeList" class="space-y-2"></div>
+  </div>
+</div>
 
-    <p class="text-[10px] text-gray-400 text-center mt-4">Install করার পর অ্যাপ অটোমেটিক standalone mode-এ খুলবে — browser bar থাকবে না।</p>
+<!-- ROLE MANAGEMENT MODAL -->
+<div id="roleModal" class="modal-overlay" onclick="if(event.target===this)closeRoleModal()">
+  <div class="modal-box bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[85vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-base font-bold"><i class="fa-solid fa-user-shield mr-2 text-amber-500"></i>Role & Permissions</h3>
+      <button onclick="closeRoleModal()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <p class="text-[10px] text-gray-400 mb-3">Super Admin only. Define which features each role can access.</p>
+    <div id="roleLoading" class="text-center py-4 hidden"><span class="spinner"></span></div>
+    <div id="roleList" class="space-y-3"></div>
   </div>
 </div>
 
@@ -784,7 +790,8 @@ var CFG = {
   qrScanAction: '',
   offices: [],
   portalClockInterval: null,
-  myTodayRecord: null
+  myTodayRecord: null,
+  companySettings: {}
 };
 
 // ── Attendance Status Codes ───────────────────────────────
@@ -834,6 +841,13 @@ var CHART_COLORS = ['#22c55e','#ef4444','#f59e0b','#3b82f6','#8b5cf6','#ec4899',
   CFG.sessionId = localStorage.getItem('aeSession') || ('S'+Date.now()+Math.random().toString(36).substr(2,6));
   localStorage.setItem('aeSession', CFG.sessionId);
   CFG.gasUrl = localStorage.getItem('gasUrl') || '';
+  // Auto-detect GAS URL from current page URL
+  var currentUrl = window.location.href.split('?')[0];
+  if (currentUrl && !CFG.gasUrl) {
+    CFG.gasUrl = currentUrl;
+    localStorage.setItem('gasUrl', currentUrl);
+  }
+  loadCompanySettings();
   var u = localStorage.getItem('aeUser');
   if (u) { try { CFG.user = JSON.parse(u); } catch(e) { CFG.user = null; } }
   var ds = bdDateStr();
@@ -913,6 +927,7 @@ function handleLogin() {
       localStorage.setItem('aeUser', JSON.stringify(r.data));
       errEl.classList.add('hidden');
       showDashboard();
+      loadCompanySettings();
     } else {
       errEl.classList.remove('hidden');
       document.getElementById('loginErrorMsg').textContent = r.error || 'Login failed.';
@@ -1006,6 +1021,10 @@ function updateHeader() {
     toggleEl('btnViewLoginHistory', false);
     toggleEl('btnOfficeManage', false);
     toggleEl('btnAdminOverride', false);
+    toggleEl('btnDeptManage', false);
+    toggleEl('btnShiftManage', false);
+    toggleEl('btnNoticeManage', false);
+    toggleEl('btnRoleManage', false);
     return;
   }
 
@@ -1023,6 +1042,10 @@ function updateHeader() {
   toggleEl('btnViewLoginHistory', true);
   toggleEl('btnOfficeManage', true);
   toggleEl('btnAdminOverride', true);
+  toggleEl('btnDeptManage', true);
+  toggleEl('btnShiftManage', true);
+  toggleEl('btnNoticeManage', true);
+  toggleEl('btnRoleManage', true);
 }
 
 function toggleEl(id, show) {
@@ -1059,11 +1082,18 @@ function switchTab(tab) {
 
 // ── Settings ─────────────────────────────────────────────
 function openSettings() {
-  document.getElementById('gasUrl').value = CFG.gasUrl || '';
-  document.getElementById('brandName').value = localStorage.getItem('brandName') || '';
-  document.getElementById('brandAddr').value = localStorage.getItem('brandAddr') || '';
-  document.getElementById('brandPhone').value = localStorage.getItem('brandPhone') || '';
-  document.getElementById('brandLogo').value = localStorage.getItem('brandLogo') || '';
+  // Pre-fill from server settings
+  if (CFG.companySettings && CFG.companySettings.company_name) {
+    document.getElementById('brandName').value = CFG.companySettings.company_name;
+    document.getElementById('brandAddr').value = CFG.companySettings.company_address || '';
+    document.getElementById('brandPhone').value = CFG.companySettings.company_phone || '';
+    document.getElementById('brandLogo').value = CFG.companySettings.company_logo || '';
+  } else {
+    document.getElementById('brandName').value = localStorage.getItem('brandName') || '';
+    document.getElementById('brandAddr').value = localStorage.getItem('brandAddr') || '';
+    document.getElementById('brandPhone').value = localStorage.getItem('brandPhone') || '';
+    document.getElementById('brandLogo').value = localStorage.getItem('brandLogo') || '';
+  }
   previewBrandLogo();
   loadProfileAccess();
   document.getElementById('settingsModal').classList.add('open');
@@ -1071,13 +1101,22 @@ function openSettings() {
 function closeSettings() { document.getElementById('settingsModal').classList.remove('open'); }
 
 function saveSettings() {
-  CFG.gasUrl = document.getElementById('gasUrl').value.trim();
-  localStorage.setItem('gasUrl', CFG.gasUrl);
   localStorage.setItem('brandName', document.getElementById('brandName').value.trim());
   localStorage.setItem('brandAddr', document.getElementById('brandAddr').value.trim());
   localStorage.setItem('brandPhone', document.getElementById('brandPhone').value.trim());
   localStorage.setItem('brandLogo', document.getElementById('brandLogo').value.trim());
   applyBranding();
+  // Save company settings to server (global)
+  apiCall('saveCompanySettings', {
+    settings: {
+      company_name: document.getElementById('brandName').value.trim(),
+      company_address: document.getElementById('brandAddr').value.trim(),
+      company_phone: document.getElementById('brandPhone').value.trim(),
+      company_logo: document.getElementById('brandLogo').value.trim()
+    },
+    role: (CFG.user && CFG.user.role) || '',
+    updatedBy: (CFG.user && CFG.user.displayName) || 'Admin'
+  }, 'POST');
   toast('Settings saved!', 'success');
   closeSettings();
 }
@@ -1127,11 +1166,23 @@ function uploadBrandLogo(input) {
   reader.readAsDataURL(file);
 }
 
+function loadCompanySettings() {
+  apiCall('companySettings').then(function(r) {
+    if (r.success && r.data) {
+      CFG.companySettings = r.data;
+      applyServerBranding();
+    }
+  }).catch(function(){});
+}
+
+function applyServerBranding() { applyBranding(); }
+
 function applyBranding() {
-  var name = localStorage.getItem('brandName') || 'AttendEase';
-  var addr = localStorage.getItem('brandAddr') || '';
-  var phone = localStorage.getItem('brandPhone') || '';
-  var logo = localStorage.getItem('brandLogo') || '';
+  var s = CFG.companySettings || {};
+  var name = s.company_name || localStorage.getItem('brandName') || 'AttendEase';
+  var addr = s.company_address || localStorage.getItem('brandAddr') || '';
+  var phone = s.company_phone || localStorage.getItem('brandPhone') || '';
+  var logo = s.company_logo || localStorage.getItem('brandLogo') || '';
   document.title = name + ' - Employee Attendance System';
   document.getElementById('hdrTitle').textContent = name;
   document.getElementById('loginTitle').textContent = name;
@@ -1139,7 +1190,7 @@ function applyBranding() {
   document.getElementById('footerAddr').textContent = addr;
   document.getElementById('footerPhone').textContent = phone;
   if (logo) {
-    document.getElementById('loginLogo').innerHTML = '<img src="'+logo+'" class="w-full h-full rounded-2xl object-cover"/>';
+    document.getElementById('loginLogo').innerHTML = '<img src="'+logo+'" class="w-full h-full rounded-2xl object-cover" onerror="this.parentNode.innerHTML=\'<i class=\\\'fa-solid fa-clipboard-check text-white text-3xl\\\'></i>\'"/>';
   } else {
     document.getElementById('loginLogo').innerHTML = '<i class="fa-solid fa-clipboard-check text-white text-3xl"></i>';
   }
@@ -2558,20 +2609,10 @@ function closeDD(e) {
   var url = localStorage.getItem('gasUrl') || '';
   if (url) {
     document.getElementById('pwaManifest').href = url + '?action=manifest&url=' + encodeURIComponent(url);
-    // Set apple-touch-icon for iOS home screen
-    document.getElementById('appleTouchIcon').href = url + '?action=icon&size=180';
-    // Service Worker for offline & standalone support
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register(url + '?action=sw', {scope: '/'}).catch(function(){});
+      navigator.serviceWorker.register(url + '?action=sw').catch(function(){});
     }
   }
-  // Listen for install prompt (Chrome/Android)
-  window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    CFG.deferredPrompt = e;
-    var btn = document.getElementById('btnInstallPWA');
-    if (btn) btn.classList.remove('hidden');
-  });
 })();
 
 function installPWA() {
@@ -2582,13 +2623,173 @@ function installPWA() {
       CFG.deferredPrompt = null;
       document.getElementById('btnInstallPWA').classList.add('hidden');
     });
-    return;
   }
-  // GAS limitation: SW MIME type not supported, so show manual instructions
-  document.getElementById('installHelpModal').classList.add('open');
 }
 
-function closeInstallHelp() { document.getElementById('installHelpModal').classList.remove('open'); }
+/* ══════════════════════════════════════════════════════════
+   DEPARTMENT MANAGEMENT
+   ══════════════════════════════════════════════════════════ */
+function openDeptModal() { document.getElementById('deptModal').classList.add('open'); loadDepts(); }
+function closeDeptModal() { document.getElementById('deptModal').classList.remove('open'); }
+function toggleDeptForm() { var f = document.getElementById('deptForm'); f.classList.toggle('hidden'); if (!f.classList.contains('hidden')) { document.getElementById('deptName').value=''; document.getElementById('deptHead').value=''; } }
+function loadDepts() {
+  document.getElementById('deptLoading').classList.remove('hidden');
+  apiCall('departments').then(function(r) {
+    document.getElementById('deptLoading').classList.add('hidden');
+    var list = document.getElementById('deptList');
+    if (!r.success || !r.data || r.data.length === 0) { list.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">No departments found.</p>'; return; }
+    var html = '';
+    r.data.forEach(function(d) {
+      var isActive = (d.Status || '').toLowerCase() === 'active';
+      html += '<div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">';
+      html += '<div><p class="text-xs font-semibold text-gray-700">'+(d.Dept_Name||'')+'</p><p class="text-[10px] text-gray-400">'+(d.Dept_ID||'')+' &bull; Head: '+(d.Dept_Head||'N/A')+'</p></div>';
+      html += '<div class="flex items-center gap-1">';
+      html += '<span class="text-[10px] px-2 py-0.5 rounded-full '+(isActive?'bg-green-50 text-green-600':'bg-red-50 text-red-500')+'">'+(d.Status||'Active')+'</span>';
+      html += '<button onclick="deleteDept(\''+d.Dept_ID+'\')" class="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center text-red-400 text-[10px]"><i class="fa-solid fa-trash"></i></button>';
+      html += '</div></div>';
+    });
+    list.innerHTML = html;
+  }).catch(function(e) { document.getElementById('deptLoading').classList.add('hidden'); toast('Failed to load departments','error'); });
+}
+function saveDept() {
+  var name = document.getElementById('deptName').value.trim();
+  if (!name) { toast('Department name required','error'); return; }
+  apiCall('addDepartment', {name:name, head:document.getElementById('deptHead').value.trim(), role:(CFG.user&&CFG.user.role)||'', updatedBy:(CFG.user&&CFG.user.displayName)||'Admin'}, 'POST')
+  .then(function(r) { if(r.success) { toast(r.message,'success'); toggleDeptForm(); loadDepts(); } else toast(r.error||'Failed','error'); })
+  .catch(function(e) { toast('Failed','error'); });
+}
+function deleteDept(id) {
+  if (!confirm('Delete this department?')) return;
+  apiCall('deleteDepartment', {deptId:id, role:(CFG.user&&CFG.user.role)||'', updatedBy:(CFG.user&&CFG.user.displayName)||'Admin'}, 'POST')
+  .then(function(r) { if(r.success) { toast(r.message,'success'); loadDepts(); } else toast(r.error||'Failed','error'); })
+  .catch(function() { toast('Failed','error'); });
+}
+
+/* ══════════════════════════════════════════════════════════
+   SHIFT MANAGEMENT
+   ══════════════════════════════════════════════════════════ */
+function openShiftModal() { document.getElementById('shiftModal').classList.add('open'); loadShifts(); }
+function closeShiftModal() { document.getElementById('shiftModal').classList.remove('open'); }
+function toggleShiftForm() { var f = document.getElementById('shiftForm'); f.classList.toggle('hidden'); if (!f.classList.contains('hidden')) { document.getElementById('shiftName').value=''; document.getElementById('shiftStart').value='09:00'; document.getElementById('shiftEnd').value='18:00'; document.getElementById('shiftLate').value='15'; } }
+function loadShifts() {
+  document.getElementById('shiftLoading').classList.remove('hidden');
+  apiCall('shifts').then(function(r) {
+    document.getElementById('shiftLoading').classList.add('hidden');
+    var list = document.getElementById('shiftList');
+    if (!r.success || !r.data || r.data.length === 0) { list.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">No shifts found.</p>'; return; }
+    var html = '';
+    r.data.forEach(function(s) {
+      var isActive = (s.Status || '').toLowerCase() === 'active';
+      html += '<div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl">';
+      html += '<div><p class="text-xs font-semibold text-gray-700">'+(s.Shift_Name||'')+'</p><p class="text-[10px] text-gray-400">'+(s.Start_Time||'')+' - '+(s.End_Time||'')+' &bull; Late: '+(s.Late_Minutes||'15')+'min</p></div>';
+      html += '<div class="flex items-center gap-1">';
+      html += '<span class="text-[10px] px-2 py-0.5 rounded-full '+(isActive?'bg-green-50 text-green-600':'bg-red-50 text-red-500')+'">'+(s.Status||'Active')+'</span>';
+      html += '<button onclick="deleteShift(\''+s.Shift_ID+'\')" class="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center text-red-400 text-[10px]"><i class="fa-solid fa-trash"></i></button>';
+      html += '</div></div>';
+    });
+    list.innerHTML = html;
+  }).catch(function() { document.getElementById('shiftLoading').classList.add('hidden'); toast('Failed to load shifts','error'); });
+}
+function saveShift() {
+  var name = document.getElementById('shiftName').value.trim();
+  if (!name) { toast('Shift name required','error'); return; }
+  apiCall('addShift', {name:name, startTime:document.getElementById('shiftStart').value, endTime:document.getElementById('shiftEnd').value, lateMinutes:document.getElementById('shiftLate').value, role:(CFG.user&&CFG.user.role)||'', updatedBy:(CFG.user&&CFG.user.displayName)||'Admin'}, 'POST')
+  .then(function(r) { if(r.success) { toast(r.message,'success'); toggleShiftForm(); loadShifts(); } else toast(r.error||'Failed','error'); })
+  .catch(function() { toast('Failed','error'); });
+}
+function deleteShift(id) {
+  if (!confirm('Delete this shift?')) return;
+  apiCall('deleteShift', {shiftId:id, role:(CFG.user&&CFG.user.role)||'', updatedBy:(CFG.user&&CFG.user.displayName)||'Admin'}, 'POST')
+  .then(function(r) { if(r.success) { toast(r.message,'success'); loadShifts(); } else toast(r.error||'Failed','error'); })
+  .catch(function() { toast('Failed','error'); });
+}
+
+/* ══════════════════════════════════════════════════════════
+   NOTICE BOARD
+   ══════════════════════════════════════════════════════════ */
+function openNoticeModal() { document.getElementById('noticeModal').classList.add('open'); loadNotices(); }
+function closeNoticeModal() { document.getElementById('noticeModal').classList.remove('open'); }
+function toggleNoticeForm() { var f = document.getElementById('noticeForm'); f.classList.toggle('hidden'); if (!f.classList.contains('hidden')) { document.getElementById('noticeTitle').value=''; document.getElementById('noticeContent').value=''; } }
+function loadNotices() {
+  document.getElementById('noticeLoading').classList.remove('hidden');
+  apiCall('notices').then(function(r) {
+    document.getElementById('noticeLoading').classList.add('hidden');
+    var list = document.getElementById('noticeList');
+    if (!r.success || !r.data || r.data.length === 0) { list.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">No notices posted yet.</p>'; return; }
+    var html = '';
+    var notices = r.data.reverse(); // newest first
+    notices.forEach(function(n) {
+      var prClass = {normal:'bg-gray-50',important:'bg-amber-50 border-l-2 border-amber-400',urgent:'bg-red-50 border-l-2 border-red-400'}[(n.Priority||'normal')] || 'bg-gray-50';
+      html += '<div class="p-3 rounded-xl '+prClass+'">';
+      html += '<div class="flex items-start justify-between"><div class="flex-1 min-w-0"><p class="text-xs font-semibold text-gray-700">'+(n.Title||'')+'</p>';
+      if (n.Content) html += '<p class="text-[10px] text-gray-500 mt-1 line-clamp-2">'+(n.Content||'')+'</p>';
+      html += '<p class="text-[9px] text-gray-400 mt-1">'+(n.Created_By||'Admin')+' &bull; '+(n.Created_Date||'')+'</p></div>';
+      html += '<div class="flex items-center gap-1 shrink-0 ml-2">';
+      if ((n.Priority||'normal') !== 'normal') html += '<span class="text-[9px] px-1.5 py-0.5 rounded bg-white text-'+(n.Priority==='urgent'?'red':'amber')+'-500 font-semibold">'+(n.Priority||'')+'</span>';
+      html += '<button onclick="deleteNotice(\''+n.Notice_ID+'\')" class="w-6 h-6 rounded hover:bg-red-100 flex items-center justify-center text-red-400 text-[9px]"><i class="fa-solid fa-trash"></i></button>';
+      html += '</div></div></div>';
+    });
+    list.innerHTML = html;
+  }).catch(function() { document.getElementById('noticeLoading').classList.add('hidden'); toast('Failed to load notices','error'); });
+}
+function saveNotice() {
+  var title = document.getElementById('noticeTitle').value.trim();
+  if (!title) { toast('Title required','error'); return; }
+  apiCall('addNotice', {title:title, content:document.getElementById('noticeContent').value.trim(), priority:document.getElementById('noticePriority').value, target:document.getElementById('noticeTarget').value, role:(CFG.user&&CFG.user.role)||'', updatedBy:(CFG.user&&CFG.user.displayName)||'Admin'}, 'POST')
+  .then(function(r) { if(r.success) { toast(r.message,'success'); toggleNoticeForm(); loadNotices(); } else toast(r.error||'Failed','error'); })
+  .catch(function() { toast('Failed','error'); });
+}
+function deleteNotice(id) {
+  if (!confirm('Delete this notice?')) return;
+  apiCall('deleteNotice', {noticeId:id, role:(CFG.user&&CFG.user.role)||'', updatedBy:(CFG.user&&CFG.user.displayName)||'Admin'}, 'POST')
+  .then(function(r) { if(r.success) { toast(r.message,'success'); loadNotices(); } else toast(r.error||'Failed','error'); })
+  .catch(function() { toast('Failed','error'); });
+}
+
+/* ══════════════════════════════════════════════════════════
+   ROLE & PERMISSIONS MANAGEMENT
+   ══════════════════════════════════════════════════════════ */
+function openRoleModal() { document.getElementById('roleModal').classList.add('open'); loadRoles(); }
+function closeRoleModal() { document.getElementById('roleModal').classList.remove('open'); }
+function loadRoles() {
+  document.getElementById('roleLoading').classList.remove('hidden');
+  apiCall('roles').then(function(r) {
+    document.getElementById('roleLoading').classList.add('hidden');
+    var list = document.getElementById('roleList');
+    if (!r.success || !r.data) { list.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">No roles found.</p>'; return; }
+    var allPerms = ['dashboard','daily','monthly','reports','employees','leaves','activity','myPortal','settings','offices','override','departments','shifts','notices','roles','profiles'];
+    var permLabels = {dashboard:'Dashboard',daily:'Daily Attendance',monthly:'Monthly View',reports:'Reports',employees:'Employees',leaves:'Leaves',activity:'Activity Log',myPortal:'My Portal',settings:'Settings',offices:'Office Locations',override:'Admin Override',departments:'Departments',shifts:'Shifts',notices:'Notices',roles:'Roles & Permissions',profiles:'Employee Profiles'};
+    var html = '';
+    r.data.forEach(function(role) {
+      var perms = (role.Permissions || '').split(',').map(function(p){return p.trim();});
+      html += '<div class="p-3 bg-gray-50 rounded-xl">';
+      html += '<div class="flex items-center justify-between mb-2"><p class="text-xs font-bold text-gray-700">'+(role.Role_Name||'')+'</p><span class="text-[9px] text-gray-400">'+(role.Description||'')+'</span></div>';
+      html += '<div class="flex flex-wrap gap-1 mb-2">';
+      allPerms.forEach(function(p) {
+        var has = perms.indexOf(p) >= 0;
+        html += '<label class="flex items-center gap-1 text-[10px] cursor-pointer px-1.5 py-0.5 rounded '+(has?'bg-primary-50 text-primary-600':'bg-gray-100 text-gray-400')+'"><input type="checkbox" '+(has?'checked':'')+' data-role="'+(role.Role_Name||'')+'" data-perm="'+p+'" onchange="updateRolePerm(this)" class="rounded accent-green-600" '+(role.Role_Name==='super_admin'&&p==='roles'?'disabled':'')+'/> '+permLabels[p]+'</label>';
+      });
+      html += '</div>';
+      html += '<button onclick="saveRolePerms(\''+(role.Role_Name||'')+'\')" class="w-full py-1.5 rounded-lg bg-primary-500 text-white text-[10px] font-semibold"><i class="fa-solid fa-save mr-1"></i>Save Permissions</button>';
+      html += '</div>';
+    });
+    list.innerHTML = html;
+  }).catch(function() { document.getElementById('roleLoading').classList.add('hidden'); toast('Failed to load roles','error'); });
+}
+function updateRolePerm(cb) {
+  // visual toggle only, actual save happens on button click
+  var label = cb.parentElement;
+  if (cb.checked) { label.classList.add('bg-primary-50','text-primary-600'); label.classList.remove('bg-gray-100','text-gray-400'); }
+  else { label.classList.remove('bg-primary-50','text-primary-600'); label.classList.add('bg-gray-100','text-gray-400'); }
+}
+function saveRolePerms(roleName) {
+  var cbs = document.querySelectorAll('input[data-role="'+roleName+'"]');
+  var perms = [];
+  cbs.forEach(function(cb) { if(cb.checked) perms.push(cb.dataset.perm); });
+  apiCall('updateRole', {roleName:roleName, permissions:perms.join(','), updatedBy:(CFG.user&&CFG.user.displayName)||'Super Admin'}, 'POST')
+  .then(function(r) { if(r.success) toast(r.message,'success'); else toast(r.error||'Failed','error'); })
+  .catch(function() { toast('Failed','error'); });
+}
 
 /* ══════════════════════════════════════════════════════════
    QR + GPS Check-In / Check-Out System
